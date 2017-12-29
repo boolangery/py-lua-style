@@ -16,10 +16,11 @@ def dynamicImport(cls):
 
 def main():
     # parse options:
-    usage = "usage: %prog [options] filename"
+    usage = 'usage: %prog [options] filename'
     parser = OptionParser(usage=usage)
-    parser.add_option("-d", "--debug", action="store_true",  dest="debug", help="enable debugging messages", default=False)
-    parser.add_option("-r", "--rewrite", action="store_true",  dest="rewrite", help="rewrite current file", default=False)
+    parser.add_option('-d', '--debug', action='store_true',  dest='debug', help='enable debugging messages', default=False)
+    parser.add_option('-r', '--rewrite', action='store_true',  dest='rewrite', help='rewrite current file', default=False)
+    parser.add_option('--with-table-align', action='store_true',  dest='tableAlign', help='enable table alignment', default=False)
     (options, args) = parser.parse_args()
 
     # check argument:
@@ -33,6 +34,9 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
     else:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
+    # optional rules:
+    optionalRules = []
+    if options.tableAlign: optionalRules.append(luastyle.rules.AlignTableRule())
 
     # read whole file:
     logging.info('Working on file ' + args[0])
@@ -41,7 +45,6 @@ def main():
         input = file.read()
 
     # chaining rules:
-    optionalRules = []
     rules = [
         luastyle.rules.ReplaceStrRule(),
         luastyle.rules.RemoveCommentRule(),
@@ -67,5 +70,5 @@ def main():
         f.close()
         logging.info('file rewrited.')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
