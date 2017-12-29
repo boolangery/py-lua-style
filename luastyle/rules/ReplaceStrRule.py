@@ -14,7 +14,7 @@ class ReplaceStrRule(FormatterRule):
     def apply(self, input):
         output = input
         # lua string regex:
-        p1 = re.compile(r'(\"(?:\\.|[^\"\\])*\")', re.MULTILINE)
+        p1 = re.compile(r'((?:\"|\')(?:\\.|[^\"\\\'])*(?:\"|\'))', re.MULTILINE)
         p2 = re.compile(r'(\[=*\[[\S\s]*\]=*\])', re.MULTILINE)
 
         match = p2.findall(output)
