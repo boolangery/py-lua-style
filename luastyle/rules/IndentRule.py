@@ -1,5 +1,7 @@
 from luastyle import FormatterRule
 import logging
+import re
+
 
 class IndentRule(FormatterRule):
     """
@@ -7,19 +9,26 @@ class IndentRule(FormatterRule):
     """
     def __init__(self):
         FormatterRule.__init__(self)
-        self.INDENT_KEYWORDS = ('function', 'if', 'repeat', 'while', '{', '(')
-        self.DEDENT_KEYWORDS = ('end', '}', ')')
+        self.INDENT_KEYWORDS = ('function', 'if', 'repeat', 'while')
+        self.INDENT_DELIM    = ('{', '(')
+        self.DEDENT_KEYWORDS = ('end')
+        self.DEDENT_DELIM    = ('}', ')')
 
     def apply(self, input):
         output = []
         level = 0
 
         for line in input.splitlines():
+            tokens = re.findall('\W+', line)
             inc, dec = 0, 0
             previous = level
             for keyword in self.INDENT_KEYWORDS:
+                inc += tokens.count(keyword)
+            for keyword in self.INDENT_DELIM:
                 inc += line.count(keyword)
             for keyword in self.DEDENT_KEYWORDS:
+                dec += tokens.count(keyword)
+            for keyword in self.DEDENT_DELIM:
                 dec += line.count(keyword)
 
             diff = inc - dec
