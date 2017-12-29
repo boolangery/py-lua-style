@@ -15,9 +15,6 @@ def dynamicImport(cls):
     return my_class
 
 def main():
-    cls = dynamicImport('IndentRule')
-    instance = cls()
-
     # parse options:
     usage = "usage: %prog [options] filename"
     parser = OptionParser(usage=usage)
@@ -54,12 +51,10 @@ def main():
     for rule in rules:
         logging.info('Applying ' + rule.__class__.__name__)
         output = rule.apply(output)
-        #logging.debug(output)
 
     for rule in reversed(rules):
         logging.info('Reverting ' + rule.__class__.__name__)
         output = rule.revert(output)
-        #logging.debug(output)
 
     if not options.rewrite:
         logging.info('done.')
