@@ -9,17 +9,17 @@ class IndentRule(FormatterRule):
     """
     def __init__(self):
         FormatterRule.__init__(self)
-        self.INDENT_KEYWORDS = ('function', 'if', 'repeat', 'while')
-        self.INDENT_DELIM    = ('{', '(')
-        self.DEDENT_KEYWORDS = ('end')
-        self.DEDENT_DELIM    = ('}', ')')
+        self.INDENT_KEYWORDS = ['function', 'if', 'repeat', 'while']
+        self.INDENT_DELIM    = ['{', '(']
+        self.DEDENT_KEYWORDS = ['end']
+        self.DEDENT_DELIM    = ['}', ')']
 
     def apply(self, input):
         output = []
         level = 0
 
         for line in input.splitlines():
-            tokens = re.findall('\W+', line)
+            tokens = re.split(r'[\(\)\[\],=:\.;,\s]\s*', line)
             inc, dec = 0, 0
             previous = level
             for keyword in self.INDENT_KEYWORDS:
