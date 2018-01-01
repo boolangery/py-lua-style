@@ -9,10 +9,11 @@ class IndentRule(FormatterRule):
     """
     def __init__(self):
         FormatterRule.__init__(self)
-        self.INDENT_KEYWORDS = ['function', 'if', 'repeat', 'while', 'do']
+        self.INDENT_KEYWORDS = ['function', 'if', 'repeat', 'while', 'for']
         self.INDENT_DELIM    = ['{', '(']
         self.DEDENT_KEYWORDS = ['end']
         self.DEDENT_DELIM    = ['}', ')']
+        self.DEDENT_LINE     = ['else', 'elseif']
 
     def apply(self, input):
         output = []
@@ -30,18 +31,27 @@ class IndentRule(FormatterRule):
                 dec += tokens.count(keyword)
             for keyword in self.DEDENT_DELIM:
                 dec += line.count(keyword)
+            dedentLine = False
+            for keyword in self.DEDENT_LINE:
+                if tokens.count(keyword) > 0:
+                    dedentLine = True
+                    break
 
             diff = inc - dec
             level += diff
+            if dedentLine:
+                lineLevel -= 1
+            else:
+                lineLevel = level
 
             logging.debug('indenting: ' + line)
             logging.debug('current level = ' + str(level))
 
             if diff == 0: # no diff, indent with current level
-                newLine = ' ' * (level * 2) + line.strip()
+                newLine = ' ' * (lineLevel * 2) + line.strip()
             elif diff > 0: # level inc, indent on previous level
-                newLine = ' ' * ((level - diff) * 2) + line.strip()
+                newLine = ' ' * ((lineLevel - diff) * 2) + line.strip()
             else: # level dec, indent normal
-                newLine = ' ' * ((level) * 2) + line.strip()
+                newLine = ' ' * ((lineLevel) * 2) + line.strip()
             output.append(newLine)
         return '\n'.join(map(str, output))
