@@ -9,7 +9,6 @@ setup(name='luastyle',
     license='MIT',
     packages=['luastyle', 'luastyle.rules'],
     zip_safe=False,
-
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.2',
@@ -18,6 +17,10 @@ setup(name='luastyle',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
     ],
-
-    install_requires=[]
+    install_requires=[],
+    entry_points={
+        'console_scripts': [
+            'luastyle = luastyle.__main__:main'
+        ]
+    }
 )
