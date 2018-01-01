@@ -49,6 +49,7 @@ def main():
     parser.add_option('-w', '--rewrite', action='store_true',  dest='rewrite', help='rewrite current file', default=False)
     parser.add_option('-r', '--recursive', action='store_true',  dest='recursive', help='indent all files in directory', default=False)
     parser.add_option('--with-table-align', action='store_true',  dest='tableAlign', help='enable table alignment', default=False)
+    parser.add_option('--with-indent-value', metavar='NUMBER', type="int", dest='indentValue', help='configure the number of whitespace per indentation level', default=2)
     (options, args) = parser.parse_args()
 
     # check argument:
@@ -73,7 +74,7 @@ def main():
     rules = [
         luastyle.rules.ReplaceStrRule(),
         luastyle.rules.RemoveCommentRule(),
-        luastyle.rules.IndentRule()] + optionalRules + [
+        luastyle.rules.IndentRule(options.indentValue)] + optionalRules + [
         luastyle.rules.StripRule(),
         luastyle.rules.EndingNewLineRule()]
 

@@ -7,8 +7,9 @@ class IndentRule(FormatterRule):
     """
     This rule indent the code.
     """
-    def __init__(self):
+    def __init__(self, indentValue):
         FormatterRule.__init__(self)
+        self.indentValue = indentValue
         self.INDENT_KEYWORDS = ['function', 'if', 'repeat', 'while', 'for']
         self.INDENT_DELIM    = ['{', '(']
         self.DEDENT_KEYWORDS = ['end']
@@ -48,10 +49,10 @@ class IndentRule(FormatterRule):
             logging.debug('current level = ' + str(level))
 
             if diff == 0: # no diff, indent with current level
-                newLine = ' ' * (lineLevel * 2) + line.strip()
+                newLine = ' ' * (lineLevel * self.indentValue) + line.strip()
             elif diff > 0: # level inc, indent on previous level
-                newLine = ' ' * ((lineLevel - diff) * 2) + line.strip()
+                newLine = ' ' * ((lineLevel - diff) * self.indentValue) + line.strip()
             else: # level dec, indent normal
-                newLine = ' ' * ((lineLevel) * 2) + line.strip()
+                newLine = ' ' * ((lineLevel) * self.indentValue) + line.strip()
             output.append(newLine)
         return '\n'.join(map(str, output))
