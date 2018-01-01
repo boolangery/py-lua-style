@@ -48,7 +48,8 @@ def main():
     rules = [
         luastyle.rules.ReplaceStrRule(),
         luastyle.rules.RemoveCommentRule(),
-        luastyle.rules.IndentRule()] + optionalRules
+        luastyle.rules.IndentRule()] + optionalRules + \
+        [luastyle.rules.StripRule()]
 
     output = input
     for rule in rules:
