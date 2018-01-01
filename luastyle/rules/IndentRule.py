@@ -19,7 +19,7 @@ class IndentRule(FormatterRule):
         level = 0
 
         for line in input.splitlines():
-            tokens = re.split(r'[\(\)\[\],=:\.;,\s]\s*', line)
+            tokens = re.split(r'[{}\(\)\[\],=:\.;,\s]\s*', line)
             inc, dec = 0, 0
             previous = level
             for keyword in self.INDENT_KEYWORDS:
