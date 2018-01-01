@@ -19,7 +19,7 @@ def main():
     usage = 'usage: %prog [options] filename'
     parser = OptionParser(usage=usage)
     parser.add_option('-d', '--debug', action='store_true',  dest='debug', help='enable debugging messages', default=False)
-    parser.add_option('-r', '--rewrite', action='store_true',  dest='rewrite', help='rewrite current file', default=False)
+    parser.add_option('-w', '--rewrite', action='store_true',  dest='rewrite', help='rewrite current file', default=False)
     parser.add_option('--with-table-align', action='store_true',  dest='tableAlign', help='enable table alignment', default=False)
     (options, args) = parser.parse_args()
 
