@@ -17,16 +17,12 @@ CODE = {
     'for_loop': {
         'raw': textwrap.dedent("""
             for i,v in ipairs(t) do
-            if type(v) == "string" then
             print(v)
-            end
             end
             """),
         'exp': textwrap.dedent("""
             for i,v in ipairs(t) do
-              if type(v) == "string" then
-                print(v)
-              end
+              print(v)
             end
             """),
     },
@@ -90,7 +86,7 @@ CODE = {
     },
     'continuation_line_func': {
         'raw': textwrap.dedent("""
-            foo(bar, biz, "This is a long string..."
+            foo(bar, biz, "This is a long string...",
             baz, qux, "Lua")
             function foo(a, b, c, d,
             e, f, g, h)
@@ -98,11 +94,11 @@ CODE = {
             end
             """),
         'exp': textwrap.dedent("""
-            foo(bar, biz, "This is a long string..."
-            baz, qux, "Lua")
+            foo(bar, biz, "This is a long string...",
+              baz, qux, "Lua")
             function foo(a, b, c, d,
-            e, f, g, h)
-            print('hello')
+                e, f, g, h)
+              print('hello')
             end
             """)
     },
@@ -124,7 +120,7 @@ CODE = {
             
             callback(function(arg1)
                 print(arg1)
-            end)
+              end)
             
             callback(function(arg1)
                 print(arg1)
@@ -175,21 +171,14 @@ class IndentRuleTestCase(unittest.TestCase):
         self.assertEqual(src, CODE['if_else']['exp'])
 
     def test_continuation_line(self):
-        pass
-        # src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line']['raw'])
-        # self.assertEqual(src, CODE['continuation_line']['exp'])
+        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line']['raw'])
+        self.assertEqual(src, CODE['continuation_line']['exp'])
 
     def test_continuation_line_func(self):
-        pass
-        # src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line_func']['raw'])
-        # self.assertEqual(src, CODE['continuation_line_func']['exp'])
+        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line_func']['raw'])
+        self.assertEqual(src, CODE['continuation_line_func']['exp'])
 
     def test_nested_function(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['nested_functions']['raw'])
-        print(src)
         self.assertEqual(src, CODE['nested_functions']['exp'])
 
-    def test_table(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['table']['raw'])
-        print(src)
-        self.assertEqual(src, CODE['table']['exp'])
