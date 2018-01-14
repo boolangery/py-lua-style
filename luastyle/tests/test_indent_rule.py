@@ -10,7 +10,7 @@ CODE = {
         'raw': "Account = {}",
         'exp': "Account = {}"
     },
-    'for_indent': {
+    'for_loop': {
         'raw': textwrap.dedent("""
             for i,v in ipairs(t) do
             if type(v) == "string" then
@@ -25,6 +25,82 @@ CODE = {
               end
             end
             """),
+    },
+    'do_end': {
+        'raw': textwrap.dedent("""
+            local v
+            do
+            local x = u2*v3-u3*v2
+            local y = u3*v1-u1*v3
+            local z = u1*v2-u2*v1
+            v = {x,y,z}
+            end
+            """),
+        'exp': textwrap.dedent("""
+            local v
+            do
+              local x = u2*v3-u3*v2
+              local y = u3*v1-u1*v3
+              local z = u1*v2-u2*v1
+              v = {x,y,z}
+            end
+            """)
+    },
+    'if_else': {
+        'raw': textwrap.dedent("""
+            if op == "+" then
+            r = a + b
+            elseif op == "-" then
+            r = a - b
+            elseif op == "*" then
+            r = a*b
+            elseif op == "/" then
+            r = a/b
+            else
+            error("invalid operation")
+            end
+            """),
+        'exp': textwrap.dedent("""
+            if op == "+" then
+              r = a + b
+            elseif op == "-" then
+              r = a - b
+            elseif op == "*" then
+              r = a*b
+            elseif op == "/" then
+              r = a/b
+            else
+              error("invalid operation")
+            end
+            """)
+    },
+    'continuation_line': {
+        'raw': textwrap.dedent("""
+            longvarname = longvarname ..
+            "Thanks for reading this example!"
+            """),
+        'exp': textwrap.dedent("""
+            longvarname = longvarname ..
+              "Thanks for reading this example!"
+            """)
+    },
+    'continuation_line_func': {
+        'raw': textwrap.dedent("""
+            foo(bar, biz, "This is a long string..."
+            baz, qux, "Lua")
+            function foo(a, b, c, d,
+            e, f, g, h)
+            print('hello')
+            end
+            """),
+        'exp': textwrap.dedent("""
+            foo(bar, biz, "This is a long string..."
+            baz, qux, "Lua")
+            function foo(a, b, c, d,
+            e, f, g, h)
+            print('hello')
+            end
+            """)
     }
 }
 
@@ -35,6 +111,19 @@ class IndentRuleTestCase(unittest.TestCase):
         self.assertEqual(src, CODE['no_indent']['exp'])
 
     def test_for_indent(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['for_indent']['raw'])
+        src = rules.IndentRule(WHITESPACE).apply(CODE['for_loop']['raw'])
+        self.assertEqual(src, CODE['for_loop']['exp'])
+
+    def test_if_else(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
+        self.assertEqual(src, CODE['if_else']['exp'])
+
+    def test_continuation_line(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line']['raw'])
         print(src)
-        self.assertEqual(src, CODE['for_indent']['exp'])
+        self.assertEqual(src, CODE['continuation_line']['exp'])
+
+    def test_continuation_line_func(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line_func']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['continuation_line_func']['exp'])
