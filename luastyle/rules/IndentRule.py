@@ -4,7 +4,6 @@ from luaparser import asttokens
 from luaparser.asttokens import Tokens
 
 INDENT_TOKEN = [
-    Tokens.DO,
     Tokens.WHILE,
     Tokens.REPEAT,
     Tokens.IF,
@@ -15,7 +14,6 @@ INDENT_TOKEN = [
 DEDENT_TOKEN = [
     Tokens.END,
     Tokens.UNTIL,
-    Tokens.THEN,
     Tokens.BRACE_L]
 
 DEDENT_LINE_TOKEN = [
