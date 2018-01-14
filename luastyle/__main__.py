@@ -26,9 +26,9 @@ def processFile(filepath, rules, rewrite):
         logging.debug('Applying ' + rule.__class__.__name__)
         output = rule.apply(output)
 
-    for rule in reversed(rules):
-        logging.debug('Reverting ' + rule.__class__.__name__)
-        output = rule.revert(output)
+    #for rule in reversed(rules):
+    #    logging.debug('Reverting ' + rule.__class__.__name__)
+    #    output = rule.revert(output)
 
     if not rewrite:
         logging.info('done.')
@@ -72,8 +72,6 @@ def main():
 
     # chaining rules:
     rules = [
-        luastyle.rules.ReplaceStrRule(),
-        luastyle.rules.RemoveCommentRule(),
         luastyle.rules.IndentRule(options.indentValue)] + optionalRules + [
         luastyle.rules.StripRule(),
         luastyle.rules.EndingNewLineRule()]

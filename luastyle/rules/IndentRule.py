@@ -1,7 +1,26 @@
 from luastyle import FormatterRule
 import logging
-import re
+from luaparser import asttokens
+from luaparser.asttokens import Tokens
 
+INDENT_TOKEN = [
+    Tokens.DO,
+    Tokens.WHILE,
+    Tokens.REPEAT,
+    Tokens.IF,
+    Tokens.FOR,
+    Tokens.FUNCTION,
+    Tokens.BRACE_R]
+
+DEDENT_TOKEN = [
+    Tokens.END,
+    Tokens.UNTIL,
+    Tokens.THEN,
+    Tokens.BRACE_L]
+
+DEDENT_LINE_TOKEN = [
+    Tokens.ELSE,
+    Tokens.ELSEIF]
 
 class IndentRule(FormatterRule):
     """
@@ -10,49 +29,35 @@ class IndentRule(FormatterRule):
     def __init__(self, indentValue):
         FormatterRule.__init__(self)
         self.indentValue = indentValue
-        self.INDENT_KEYWORDS = ['function', 'if', 'repeat', 'while', 'for']
-        self.INDENT_DELIM    = ['{', '(']
-        self.DEDENT_KEYWORDS = ['end']
-        self.DEDENT_DELIM    = ['}', ')']
-        self.DEDENT_LINE     = ['else', 'elseif']
 
     def apply(self, input):
-        output = []
+        atokens = asttokens.parse(input)
         level = 0
 
-        for line in input.splitlines():
-            tokens = re.split(r'[{}\(\)\[\],=:\.;,\s]\s*', line)
+        # here simply count token that indent or dedent code
+        for line in atokens.lines():
             inc, dec = 0, 0
-            previous = level
-            for keyword in self.INDENT_KEYWORDS:
-                inc += tokens.count(keyword)
-            for keyword in self.INDENT_DELIM:
-                inc += line.count(keyword)
-            for keyword in self.DEDENT_KEYWORDS:
-                dec += tokens.count(keyword)
-            for keyword in self.DEDENT_DELIM:
-                dec += line.count(keyword)
-            dedentLine = False
-            for keyword in self.DEDENT_LINE:
-                if tokens.count(keyword) > 0:
-                    dedentLine = True
-                    break
+            inc += len(line.types(INDENT_TOKEN))
+            dec += len(line.types(DEDENT_TOKEN))
 
+            # check if this line only need dedent (elseif, else..)
+            dedentLine = (len(line.types(DEDENT_LINE_TOKEN)) > 0)
+
+            # compute indentation level
             diff = inc - dec
-            level += diff
-            if dedentLine:
-                lineLevel -= 1
+            level += diff # global level
+
+            # line level
+            if dedentLine:  lineLevel -= 1
+            else:           lineLevel = level
+
+            logging.debug('level=' + str(level) + '\tinc=' + str(inc) + '\tdec= ' + str(dec) + '\t' + line.toSource())
+
+            # level inc, indent on previous level
+            if diff > 0:
+                line.indent((lineLevel - diff) * self.indentValue)
             else:
-                lineLevel = level
+                line.indent(lineLevel * self.indentValue)
 
-            logging.debug('indenting: ' + line)
-            logging.debug('current level = ' + str(level))
-
-            if diff == 0: # no diff, indent with current level
-                newLine = ' ' * (lineLevel * self.indentValue) + line.strip()
-            elif diff > 0: # level inc, indent on previous level
-                newLine = ' ' * ((lineLevel - diff) * self.indentValue) + line.strip()
-            else: # level dec, indent normal
-                newLine = ' ' * ((lineLevel) * self.indentValue) + line.strip()
-            output.append(newLine)
-        return '\n'.join(map(str, output))
+        # simply return modified tokens to source
+        return atokens.toSource()

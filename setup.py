@@ -17,7 +17,7 @@ setup(name='luastyle',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
     ],
-    install_requires=[],
+    install_requires=['luastyle >= 0.1'],
     entry_points={
         'console_scripts': [
             'luastyle = luastyle.__main__:main'
