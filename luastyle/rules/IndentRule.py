@@ -38,6 +38,19 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
             for linetok in atokens.lines()[1:]:
                 linetok.indent((self._level + 1) * self._indentValue)
 
+    def enter_While(self, node):
+        self._level += 1
+        atokens = self.tokens(node)
+        line = atokens.first().lineNumber
+        for n in node.body:
+            nodetok = self.tokens(n)
+            for linetok in nodetok.lines():
+                if linetok.lineNumber > line:
+                    linetok.indent(self.currentIndent())
+
+    def exit_While(self, node):
+        self._level -= 1
+
     def enter_Call(self, node):
         self._level += 1
         atokens = self.tokens(node)

@@ -162,6 +162,24 @@ CODE = {
               average = 12}
             """)
     },
+    'while': {
+        'raw': textwrap.dedent("""
+            while true do
+                                     print(f)
+              end
+              while isValid() do print('ok'); process() end
+            while a == 1 do
+                print('equal') end
+            """),
+        'exp': textwrap.dedent("""
+            while true do
+              print(f)
+            end
+            while isValid() do print('ok'); process() end
+            while a == 1 do
+              print('equal') end
+            """)
+    },
 }
 
 
@@ -192,5 +210,9 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_table(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['table']['raw'])
-        print(src)
         self.assertEqual(src, CODE['table']['exp'])
+
+    def test_while(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['while']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['while']['exp'])
