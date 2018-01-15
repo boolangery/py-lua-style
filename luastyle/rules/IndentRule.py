@@ -62,6 +62,13 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def exit_Do(self, node):
         self._level -= 1
 
+    def enter_Repeat(self, node):
+        self._level += 1
+        self.indentControlStruct(node)
+
+    def exit_Repeat(self, node):
+        self._level -= 1
+
     def enter_Call(self, node):
         self._level += 1
         atokens = self.tokens(node)

@@ -216,6 +216,24 @@ CODE = {
             end
             """)
     },
+    'repeat': {
+        'raw': textwrap.dedent("""
+            repeat
+            line = os.read()
+            until line ~= ""
+            repeat print(foo) until isValid()
+            repeat
+            line = os.read() until line ~= ""
+            """),
+        'exp': textwrap.dedent("""
+            repeat
+              line = os.read()
+            until line ~= ""
+            repeat print(foo) until isValid()
+            repeat
+              line = os.read() until line ~= ""
+            """)
+    },
 }
 
 
@@ -256,3 +274,6 @@ class IndentRuleTestCase(unittest.TestCase):
         src = rules.IndentRule(WHITESPACE).apply(CODE['do_end']['raw'])
         self.assertEqual(src, CODE['do_end']['exp'])
 
+    def test_repeat(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['repeat']['raw'])
+        self.assertEqual(src, CODE['repeat']['exp'])
