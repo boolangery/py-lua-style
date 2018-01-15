@@ -5,31 +5,15 @@ from luaparser import astnodes
 from luaparser import ast
 from luaparser.asttokens import Tokens
 
-INDENT_TOKEN = [
-    Tokens.WHILE,
-    Tokens.REPEAT,
-    Tokens.IF,
-    Tokens.FOR,
-    Tokens.FUNCTION,
-    Tokens.BRACE_R,
-    Tokens.PARENT_R]
-
-DEDENT_TOKEN = [
-    Tokens.END,
-    Tokens.UNTIL,
-    Tokens.BRACE_L,
-    Tokens.PARENT_L]
-
-DEDENT_LINE_TOKEN = [
-    Tokens.ELSE,
-    Tokens.ELSEIF]
-
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
     def __init__(self, atokens, indentValue):
         self._atokens = atokens
         self._indentValue = indentValue
         self._level = 0
+
+    def currentIndent(self, offset = 0):
+        return (self._level + offset) * self._indentValue
 
     def tokens(self, node):
         return self._atokens.fromAST(node)
@@ -43,29 +27,16 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                     ltokens[i+1].column = ltokens[i+1].column - wsToRemove
                     logging.debug('removing whitespace beetween "' + ltokens[i].text + '" and "' + ltokens[i+1].text + '"')
 
-    def indentNextLines(self, node):
-        atokens = self.tokens(node)
-        if atokens.lineCount() > 0:
-            firstLine = True
-            level = 0
-            for ltokens in atokens.lines():
-                if len(ltokens) > 0:
-                    if firstLine:
-                        level = ltokens.first().column
-                        firstLine = False
-                    else:
-                        ltokens.indent(level + self._indentValue)
-
     def enter_LocalAssign(self, node):
         atokens = self.tokens(node)
         lines = atokens.lines()
         lines[0].indent(self._level * self._indentValue)
 
-        #self.stripTokens(atokens)
-
     def enter_Assign(self, node):
         if len(node.values)>0 and isinstance(node.values[0], astnodes.Concat):
-            self.indentNextLines(node)
+            atokens = self.tokens(node)
+            for linetok in atokens.lines()[1:]:
+                linetok.indent((self._level + 1) * self._indentValue)
 
     def enter_Call(self, node):
         self._level += 1
@@ -89,7 +60,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Function(self, node):
         self._level += 1
         atokens = self.tokens(node)
-        line  = atokens.first().lineNumber             # first line
+        line  = atokens.first().lineNumber
 
         # grab all tokens representing function args
         argstok = atokens.nextOfType(Tokens.PARENT_R).grabUntil(Tokens.PARENT_L)
@@ -143,6 +114,22 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 for linetok in bodytok.lines():
                     linetok.indent(level + self._indentValue)
 
+    def enter_Table(self, node):
+        self._level += 1
+        atokens = self.tokens(node)
+
+        # indent table body, skip first line
+        for linetok in atokens.lines()[1:]:
+            linetok.indent(self.currentIndent())
+
+        # dedent '}' if no other table token before
+        brackettok = atokens.last()
+        if brackettok.isFirstOnLine():
+            brackettok.line().indent(self.currentIndent(-1))
+
+    def exit_Table(self, node):
+        self._level -= 1
+
 
 class IndentRule(FormatterRule):
     """
@@ -166,38 +153,6 @@ class IndentRule(FormatterRule):
         # strip left all
         for aline in atokens.lines():
             aline.stripl()
-
-        IndentVisitor(atokens, self.indentValue).visit(tree)
-
-        # simply return modified tokens to source
-        return atokens.toSource()
-
-
-        level = 0
-        # here simply count token that indent or dedent code
-        for line in atokens.lines():
-            inc, dec = 0, 0
-            inc += len(line.types(INDENT_TOKEN))
-            dec += len(line.types(DEDENT_TOKEN))
-
-            # check if this line only need dedent (elseif, else..)
-            dedentLine = (len(line.types(DEDENT_LINE_TOKEN)) > 0)
-
-            # compute indentation level
-            diff = inc - dec
-            level += diff # global level
-
-            # line level
-            if dedentLine:  lineLevel -= 1
-            else:           lineLevel = level
-
-            logging.debug('level=' + str(level) + '\tinc=' + str(inc) + '\tdec= ' + str(dec) + '\t' + line.toSource())
-
-            # level inc, indent on previous level
-            if diff > 0:
-                line.indent((lineLevel - diff) * self.indentValue)
-            else:
-                line.indent(lineLevel * self.indentValue)
 
         IndentVisitor(atokens, self.indentValue).visit(tree)
 

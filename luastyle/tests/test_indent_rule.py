@@ -140,6 +140,10 @@ CODE = {
             },
             non_nested = 42
             }
+            local inline_table = {'1', '2', '3', '4'}
+            local strange_table = {model = 'car',
+            speed = 42.56, limit = 48,
+            average = 12}
             """),
         'exp': textwrap.dedent("""
             local table = {
@@ -152,6 +156,10 @@ CODE = {
               },
               non_nested = 42
             }
+            local inline_table = {'1', '2', '3', '4'}
+            local strange_table = {model = 'car',
+              speed = 42.56, limit = 48,
+              average = 12}
             """)
     },
 }
@@ -182,3 +190,7 @@ class IndentRuleTestCase(unittest.TestCase):
         src = rules.IndentRule(WHITESPACE).apply(CODE['nested_functions']['raw'])
         self.assertEqual(src, CODE['nested_functions']['exp'])
 
+    def test_table(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['table']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['table']['exp'])
