@@ -46,34 +46,6 @@ CODE = {
             end
             """)
     },
-    'if_else': {
-        'raw': textwrap.dedent("""
-            if op == "+" then
-            r = a + b
-            elseif op == "-" then
-            r = a - b
-            elseif op == "*" then
-            r = a*b
-            elseif op == "/" then
-            r = a/b
-            else
-            error("invalid operation")
-            end
-            """),
-        'exp': textwrap.dedent("""
-            if op == "+" then
-              r = a + b
-            elseif op == "-" then
-              r = a - b
-            elseif op == "*" then
-              r = a*b
-            elseif op == "/" then
-              r = a/b
-            else
-              error("invalid operation")
-            end
-            """)
-    },
     'continuation_line': {
         'raw': textwrap.dedent("""
             longvarname = longvarname ..
@@ -234,6 +206,53 @@ CODE = {
               line = os.read() until line ~= ""
             """)
     },
+    'if_else': {
+        'raw': textwrap.dedent("""
+        if op == "+" then
+        r = a + b
+        elseif op == "-" then
+        r = a - b
+        elseif op == "*" then
+        r = a*b
+        elseif op == "/" then
+        r = a/b
+        else
+        error("invalid operation")
+        end
+        if true then foo = 'bar' else foo = nil end
+        if true then
+        print('hello')
+        end
+        if true then
+        print('hello') end
+        if nested then
+        if nested then
+        if nested then print('ok Im nested') end
+        elseif foo then
+        local a = 42
+        end
+        end
+        """),
+        'exp': textwrap.dedent("""
+        if op == "+" then
+          r = a + b
+        elseif op == "-" then
+          r = a - b
+        elseif op == "*" then
+          r = a*b
+        elseif op == "/" then
+          r = a/b
+        else
+          error("invalid operation")
+        end
+        if true then foo = 'bar' else foo = nil end
+        if true then
+          print('hello')
+        end
+        if true then
+          print('hello') end
+        """)
+    },
 }
 
 
@@ -245,10 +264,6 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_for_indent(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['for_loop']['raw'])
         self.assertEqual(src, CODE['for_loop']['exp'])
-
-    def test_if_else(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
-        self.assertEqual(src, CODE['if_else']['exp'])
 
     def test_continuation_line(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line']['raw'])
@@ -277,3 +292,8 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_repeat(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['repeat']['raw'])
         self.assertEqual(src, CODE['repeat']['exp'])
+
+    def test_if_else(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['if_else']['exp'])
