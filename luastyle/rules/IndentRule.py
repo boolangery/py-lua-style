@@ -128,22 +128,38 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         self._level -= 1
 
     def enter_If(self, node):
+        self._level += 1
         atokens = self.tokens(node)
-        level = atokens.first().column      # current indentation level
         line  = atokens.first().lineNumber  # first line
 
         # indent body
         for n in node.body:
             bodytok = self.tokens(n)
             for linetok in bodytok.lines():
-                linetok.indent(level + self._indentValue)
+                if linetok.lineNumber > line:
+                    linetok.indent(self.currentIndent())
+
+    def exit_If(self, node):
+        self._level -= 1
+
+    def enter_ElseIf(self, node):
+        atokens = self.tokens(node)
+        line  = atokens.first().lineNumber  # first line
+
+        # indent body
+        for n in node.body:
+            bodytok = self.tokens(n)
+            for linetok in bodytok.lines():
+                if linetok.lineNumber > line:
+                    linetok.indent(self.currentIndent())
 
         # indent orelse
         if isinstance(node.orelse, list):
             for n in node.orelse:
                 bodytok = self.tokens(n)
                 for linetok in bodytok.lines():
-                    linetok.indent(level + self._indentValue)
+                    linetok.indent(self.currentIndent())
+
 
     def enter_Table(self, node):
         self._level += 1

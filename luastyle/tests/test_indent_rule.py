@@ -251,6 +251,13 @@ CODE = {
         end
         if true then
           print('hello') end
+        if nested then
+          if nested then
+            if nested then print('ok Im nested') end
+          elseif foo then
+            local a = 42
+          end
+        end
         """)
     },
 }
@@ -295,5 +302,4 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_if_else(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
-        print(src)
         self.assertEqual(src, CODE['if_else']['exp'])
