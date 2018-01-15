@@ -260,6 +260,34 @@ CODE = {
         end
         """)
     },
+        'label': {
+        'raw': textwrap.dedent("""
+            do do
+            ::my_label::
+            end 
+            goto my_label
+            end
+            """),
+        'exp': textwrap.dedent("""
+            do do
+                ::my_label::
+              end
+              goto my_label
+            end
+            """)
+    },
+    'fornum': {
+        'raw': textwrap.dedent("""
+            for var=exp1,exp2,exp3 do
+            local something
+            end
+            """),
+        'exp': textwrap.dedent("""
+            for var=exp1,exp2,exp3 do
+              local something
+            end
+            """)
+    },
 }
 
 
@@ -303,3 +331,12 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_if_else(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
         self.assertEqual(src, CODE['if_else']['exp'])
+
+    def test_label(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['label']['raw'])
+        self.assertEqual(src, CODE['label']['exp'])
+
+    def test_fornum(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['fornum']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['fornum']['exp'])
