@@ -180,6 +180,42 @@ CODE = {
               print('equal') end
             """)
     },
+    'do_end': {
+        'raw': textwrap.dedent("""
+            do
+            local a
+            -- comment
+            end
+            do local a end
+            do do do local b end end end
+            do
+            local a
+            do
+            local b
+            do
+            local c = a + b
+            end
+            end
+            end
+            """),
+        'exp': textwrap.dedent("""
+            do
+              local a
+              -- comment
+            end
+            do local a end
+            do do do local b end end end
+            do
+              local a
+              do
+                local b
+                do
+                  local c = a + b
+                end
+              end
+            end
+            """)
+    },
 }
 
 
@@ -214,5 +250,9 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_while(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['while']['raw'])
-        print(src)
         self.assertEqual(src, CODE['while']['exp'])
+
+    def test_do_end(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['do_end']['raw'])
+        self.assertEqual(src, CODE['do_end']['exp'])
+

@@ -27,10 +27,20 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                     ltokens[i+1].column = ltokens[i+1].column - wsToRemove
                     logging.debug('removing whitespace beetween "' + ltokens[i].text + '" and "' + ltokens[i+1].text + '"')
 
-    def enter_LocalAssign(self, node):
+    def indentControlStruct(self, node):
         atokens = self.tokens(node)
-        lines = atokens.lines()
-        lines[0].indent(self._level * self._indentValue)
+        line = atokens.first().lineNumber
+        for n in node.body:
+            nodetok = self.tokens(n)
+            for linetok in nodetok.lines():
+                if linetok.lineNumber > line:
+                    linetok.indent(self.currentIndent())
+
+    def enter_LocalAssign(self, node):
+        pass
+        # atokens = self.tokens(node)
+        # lines = atokens.lines()
+        # lines[0].indent(self.currentIndent())
 
     def enter_Assign(self, node):
         if len(node.values)>0 and isinstance(node.values[0], astnodes.Concat):
@@ -40,15 +50,16 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_While(self, node):
         self._level += 1
-        atokens = self.tokens(node)
-        line = atokens.first().lineNumber
-        for n in node.body:
-            nodetok = self.tokens(n)
-            for linetok in nodetok.lines():
-                if linetok.lineNumber > line:
-                    linetok.indent(self.currentIndent())
+        self.indentControlStruct(node)
 
     def exit_While(self, node):
+        self._level -= 1
+
+    def enter_Do(self, node):
+        self._level += 1
+        self.indentControlStruct(node)
+
+    def exit_Do(self, node):
         self._level -= 1
 
     def enter_Call(self, node):
