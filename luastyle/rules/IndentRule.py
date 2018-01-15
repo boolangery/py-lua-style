@@ -94,7 +94,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         line  = atokens.first().lineNumber
 
         # grab all tokens representing function args
-        argstok = atokens.nextOfType(Tokens.PARENT_R).grabUntil(Tokens.PARENT_L)
+        argstok = atokens.first().nextOfType(Tokens.PARENT_R).grabUntil(Tokens.PARENT_L)
         # indent argument on several lines
         for linetok in argstok.lines():
             if linetok.lineNumber > line:
