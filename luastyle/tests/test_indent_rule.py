@@ -56,3 +56,6 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_invoke(self):
         self.setupTest('invoke')
+
+    def test_function(self):
+        self.setupTest('function')

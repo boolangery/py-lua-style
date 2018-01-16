@@ -10,10 +10,6 @@ def abort(msg):
     logging.error(msg)
     sys.exit()
 
-def dynamicImport(cls):
-    my_class = getattr(luastyle.rules, cls)
-    return my_class
-
 def processFile(filepath, rules, rewrite):
     # read whole file:
     logging.info('Working on file ' + filepath)
@@ -25,10 +21,6 @@ def processFile(filepath, rules, rewrite):
     for rule in rules:
         logging.debug('Applying ' + rule.__class__.__name__)
         output = rule.apply(output)
-
-    #for rule in reversed(rules):
-    #    logging.debug('Reverting ' + rule.__class__.__name__)
-    #    output = rule.revert(output)
 
     if not rewrite:
         logging.info('done.')
@@ -66,13 +58,18 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
     else:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
+    # IndentRule options:
+    indentOptions = luastyle.rules.IndentOptions()
+    indentOptions.indentType = luastyle.rules.IndentType.SPACE
+    indentOptions.indentSize = options.indentValue
+
     # optional rules:
     optionalRules = []
     if options.tableAlign: optionalRules.append(luastyle.rules.AlignTableRule())
 
     # chaining rules:
     rules = [
-        luastyle.rules.IndentRule(options.indentValue)] + optionalRules + [
+        luastyle.rules.IndentRule(indentOptions)] + optionalRules + [
         luastyle.rules.StripRule(),
         luastyle.rules.EndingNewLineRule()]
 
