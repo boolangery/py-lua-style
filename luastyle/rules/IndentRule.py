@@ -27,7 +27,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                     ltokens[i+1].column = ltokens[i+1].column - wsToRemove
                     logging.debug('removing whitespace beetween "' + ltokens[i].text + '" and "' + ltokens[i+1].text + '"')
 
-    def indentControlStruct(self, node):
+    def indentBody(self, node):
         atokens = self.tokens(node)
         line = atokens.first().lineNumber
         for n in node.body:
@@ -50,21 +50,21 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_While(self, node):
         self._level += 1
-        self.indentControlStruct(node)
+        self.indentBody(node)
 
     def exit_While(self, node):
         self._level -= 1
 
     def enter_Do(self, node):
         self._level += 1
-        self.indentControlStruct(node)
+        self.indentBody(node)
 
     def exit_Do(self, node):
         self._level -= 1
 
     def enter_Repeat(self, node):
         self._level += 1
-        self.indentControlStruct(node)
+        self.indentBody(node)
 
     def exit_Repeat(self, node):
         self._level -= 1
@@ -160,6 +160,12 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 for linetok in bodytok.lines():
                     linetok.indent(self.currentIndent())
 
+    def enter_Fornum(self, node):
+        self._level += 1
+        self.indentBody(node)
+
+    def exit_Fornum(self, node):
+        self._level -= 1
 
     def enter_Table(self, node):
         self._level += 1
