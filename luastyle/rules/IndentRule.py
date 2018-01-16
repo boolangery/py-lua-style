@@ -4,16 +4,26 @@ from luaparser import asttokens
 from luaparser import astnodes
 from luaparser import ast
 from luaparser.asttokens import Tokens
+from enum import Enum
 
+class IndentType(Enum):
+    SPACE = 1
+
+class IndentOptions():
+    def __init__(self):
+        self.indentType = IndentType.SPACE
+        self.indentSize = 2
+        self.assignContinuationLineLevel = 1
+        self.functionContinuationLineLevel = 2
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
-    def __init__(self, atokens, indentValue):
+    def __init__(self, atokens, options):
         self._atokens = atokens
-        self._indentValue = indentValue
+        self._options = options
         self._level = 0
 
     def currentIndent(self, offset = 0):
-        return (self._level + offset) * self._indentValue
+        return (self._level + offset) * self._options.indentSize
 
     def tokens(self, node):
         return self._atokens.fromAST(node)
@@ -46,7 +56,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         if len(node.values)>0 and isinstance(node.values[0], astnodes.Concat):
             atokens = self.tokens(node)
             for linetok in atokens.lines()[1:]:
-                linetok.indent((self._level + 1) * self._indentValue)
+                linetok.indent(self.currentIndent(1))
 
     def enter_While(self, node):
         self._level += 1
@@ -79,19 +89,19 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         # indent argument on several lines
         for linetok in argstok.lines():
             if linetok.lineNumber > line:
-                linetok.indent((self._level + 1) * self._indentValue)
+                linetok.indent(self.currentIndent(1))
 
         # indent body if not inline
         for n in node.body:
             bodytok = self.tokens(n)
             for linetok in bodytok.lines():
                 if linetok.lineNumber > line:
-                    linetok.indent(self._level * self._indentValue)
+                    linetok.indent(self.currentIndent())
 
         # dedent end if first token on line
         endl = atokens.last().line()
         if endl.first() == atokens.last():
-            endl.indent((self._level - 1) * self._indentValue)
+            endl.indent(self.currentIndent(-1))
 
     def exit_Function(self, node):
         self._level -= 1
@@ -103,7 +113,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         for n in node.body:
             bodytok = self.tokens(n)
             for linetok in bodytok.lines():
-                linetok.indent(self._level * self._indentValue)
+                linetok.indent(self.currentIndent())
 
     def exit_Forin(self, node):
         self._level -= 1
@@ -156,13 +166,13 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         # indent arg on several lines
         for linetok in atokens.lines():
             if linetok.lineNumber > line:
-                linetok.indent(self._level * self._indentValue)
+                linetok.indent(self.currentIndent())
 
         # if the last ')' is alone on the line then dedent
         last = atokens.last()
         if last.type == Tokens.PARENT_L.value:
             if len(last.line()) == 1 :
-                last.line().indent((self._level - 1) * self._indentValue)
+                last.line().indent(self.currentIndent(-1))
 
     def exit_Call(self, node):
         self._level -= 1
@@ -175,13 +185,13 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         # indent arg on several lines
         for linetok in atokens.lines():
             if linetok.lineNumber > line:
-                linetok.indent(self._level * self._indentValue)
+                linetok.indent(self.currentIndent())
 
         # if the last ')' is alone on the line then dedent
         last = atokens.last()
         if last.type == Tokens.PARENT_L.value:
             if len(last.line()) == 1 :
-                last.line().indent((self._level - 1) * self._indentValue)
+                last.line().indent(self.currentIndent(-1))
 
     def exit_Invoke(self, node):
         self._level -= 1
@@ -207,9 +217,9 @@ class IndentRule(FormatterRule):
     """
     This rule indent the code.
     """
-    def __init__(self, indentValue):
+    def __init__(self, options):
         FormatterRule.__init__(self)
-        self.indentValue = indentValue
+        self._options = options
 
     def apply(self, input):
         atokens = asttokens.parse(input)
@@ -226,7 +236,7 @@ class IndentRule(FormatterRule):
         for aline in atokens.lines():
             aline.stripl()
 
-        IndentVisitor(atokens, self.indentValue).visit(tree)
+        IndentVisitor(atokens, self._options).visit(tree)
 
         # simply return modified tokens to source
         return atokens.toSource()

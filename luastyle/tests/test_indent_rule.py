@@ -6,8 +6,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 
-WHITESPACE = 2
-
 # contains all code sample used in test
 CODE = {
     'no_indent': {
@@ -349,58 +347,57 @@ CODE = {
 
 class IndentRuleTestCase(unittest.TestCase):
     def test_no_indent(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['no_indent']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['no_indent']['raw'])
         self.assertEqual(src, CODE['no_indent']['exp'])
 
     def test_for_indent(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['for_loop']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['for_loop']['raw'])
         self.assertEqual(src, CODE['for_loop']['exp'])
 
     def test_continuation_line(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['continuation_line']['raw'])
         self.assertEqual(src, CODE['continuation_line']['exp'])
 
     def test_continuation_line_func(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['continuation_line_func']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['continuation_line_func']['raw'])
         self.assertEqual(src, CODE['continuation_line_func']['exp'])
 
     def test_nested_function(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['nested_functions']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['nested_functions']['raw'])
         self.assertEqual(src, CODE['nested_functions']['exp'])
 
     def test_table(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['table']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['table']['raw'])
         self.assertEqual(src, CODE['table']['exp'])
 
     def test_while(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['while']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['while']['raw'])
         self.assertEqual(src, CODE['while']['exp'])
 
     def test_do_end(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['do_end']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['do_end']['raw'])
         self.assertEqual(src, CODE['do_end']['exp'])
 
     def test_repeat(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['repeat']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['repeat']['raw'])
         self.assertEqual(src, CODE['repeat']['exp'])
 
     def test_if_else(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['if_else']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['if_else']['raw'])
         self.assertEqual(src, CODE['if_else']['exp'])
 
     def test_label(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['label']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['label']['raw'])
         self.assertEqual(src, CODE['label']['exp'])
 
     def test_fornum(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['fornum']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['fornum']['raw'])
         self.assertEqual(src, CODE['fornum']['exp'])
 
     def test_call(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['call']['raw'])
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['call']['raw'])
         self.assertEqual(src, CODE['call']['exp'])
 
     def test_invoke(self):
-        src = rules.IndentRule(WHITESPACE).apply(CODE['invoke']['raw'])
-        print(src)
+        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['invoke']['raw'])
         self.assertEqual(src, CODE['invoke']['exp'])
