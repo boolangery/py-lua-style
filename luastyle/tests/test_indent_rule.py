@@ -1,403 +1,58 @@
 import unittest
-import textwrap
 from luastyle import rules
 import logging
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
-
-# contains all code sample used in test
-CODE = {
-    'no_indent': {
-        'raw': "Account = {}",
-        'exp': "Account = {}"
-    },
-    'for_loop': {
-        'raw': textwrap.dedent("""
-            for i,v in ipairs(t) do
-            print(v)
-            end
-            """),
-        'exp': textwrap.dedent("""
-            for i,v in ipairs(t) do
-              print(v)
-            end
-            """),
-    },
-    'do_end': {
-        'raw': textwrap.dedent("""
-            local v
-            do
-            local x = u2*v3-u3*v2
-            local y = u3*v1-u1*v3
-            local z = u1*v2-u2*v1
-            v = {x,y,z}
-            end
-            """),
-        'exp': textwrap.dedent("""
-            local v
-            do
-              local x = u2*v3-u3*v2
-              local y = u3*v1-u1*v3
-              local z = u1*v2-u2*v1
-              v = {x,y,z}
-            end
-            """)
-    },
-    'continuation_line': {
-        'raw': textwrap.dedent("""
-            longvarname = longvarname ..
-            "Thanks for reading this example!"
-            """),
-        'exp': textwrap.dedent("""
-            longvarname = longvarname ..
-              "Thanks for reading this example!"
-            """)
-    },
-    'continuation_line_func': {
-        'raw': textwrap.dedent("""
-            foo(bar, biz, "This is a long string...",
-            baz, qux, "Lua")
-            function foo(a, b, c, d,
-            e, f, g, h)
-            print('hello')
-            end
-            """),
-        'exp': textwrap.dedent("""
-            foo(bar, biz, "This is a long string...",
-              baz, qux, "Lua")
-            function foo(a, b, c, d,
-                e, f, g, h)
-              print('hello')
-            end
-            """)
-    },
-    'nested_functions': {
-        'raw': textwrap.dedent("""
-            local test = bind(function() end, function() end)
-            
-            callback(function(arg1)
-            print(arg1)
-            end)
-            
-            callback(function(arg1)
-            print(arg1)
-            end
-            )
-            """),
-        'exp': textwrap.dedent("""
-            local test = bind(function() end, function() end)
-            
-            callback(function(arg1)
-                print(arg1)
-              end)
-            
-            callback(function(arg1)
-                print(arg1)
-              end
-            )
-            """)
-    },
-    'table': {
-        'raw': textwrap.dedent("""
-            local table = {
-            nested = {
-            days = {
-            monday = 1,
-            tuesday = 2,
-            },
-            foo = 'bar',
-            },
-            non_nested = 42
-            }
-            local inline_table = {'1', '2', '3', '4'}
-            local strange_table = {model = 'car',
-            speed = 42.56, limit = 48,
-            average = 12}
-            """),
-        'exp': textwrap.dedent("""
-            local table = {
-              nested = {
-                days = {
-                  monday = 1,
-                  tuesday = 2,
-                },
-                foo = 'bar',
-              },
-              non_nested = 42
-            }
-            local inline_table = {'1', '2', '3', '4'}
-            local strange_table = {model = 'car',
-              speed = 42.56, limit = 48,
-              average = 12}
-            """)
-    },
-    'while': {
-        'raw': textwrap.dedent("""
-            while true do
-                                     print(f)
-              end
-              while isValid() do print('ok'); process() end
-            while a == 1 do
-                print('equal') end
-            """),
-        'exp': textwrap.dedent("""
-            while true do
-              print(f)
-            end
-            while isValid() do print('ok'); process() end
-            while a == 1 do
-              print('equal') end
-            """)
-    },
-    'do_end': {
-        'raw': textwrap.dedent("""
-            do
-            local a
-            -- comment
-            end
-            do local a end
-            do do do local b end end end
-            do
-            local a
-            do
-            local b
-            do
-            local c = a + b
-            end
-            end
-            end
-            """),
-        'exp': textwrap.dedent("""
-            do
-              local a
-              -- comment
-            end
-            do local a end
-            do do do local b end end end
-            do
-              local a
-              do
-                local b
-                do
-                  local c = a + b
-                end
-              end
-            end
-            """)
-    },
-    'repeat': {
-        'raw': textwrap.dedent("""
-            repeat
-            line = os.read()
-            until line ~= ""
-            repeat print(foo) until isValid()
-            repeat
-            line = os.read() until line ~= ""
-            """),
-        'exp': textwrap.dedent("""
-            repeat
-              line = os.read()
-            until line ~= ""
-            repeat print(foo) until isValid()
-            repeat
-              line = os.read() until line ~= ""
-            """)
-    },
-    'if_else': {
-        'raw': textwrap.dedent("""
-        if op == "+" then
-        r = a + b
-        elseif op == "-" then
-        r = a - b
-        elseif op == "*" then
-        r = a*b
-        elseif op == "/" then
-        r = a/b
-        else
-        error("invalid operation")
-        end
-        if true then foo = 'bar' else foo = nil end
-        if true then
-        print('hello')
-        end
-        if true then
-        print('hello') end
-        if nested then
-        if nested then
-        if nested then print('ok Im nested') end
-        elseif foo then
-        local a = 42
-        end
-        end
-        """),
-        'exp': textwrap.dedent("""
-        if op == "+" then
-          r = a + b
-        elseif op == "-" then
-          r = a - b
-        elseif op == "*" then
-          r = a*b
-        elseif op == "/" then
-          r = a/b
-        else
-          error("invalid operation")
-        end
-        if true then foo = 'bar' else foo = nil end
-        if true then
-          print('hello')
-        end
-        if true then
-          print('hello') end
-        if nested then
-          if nested then
-            if nested then print('ok Im nested') end
-          elseif foo then
-            local a = 42
-          end
-        end
-        """)
-    },
-        'label': {
-        'raw': textwrap.dedent("""
-            do do
-            ::my_label::
-            end 
-            goto my_label
-            end
-            """),
-        'exp': textwrap.dedent("""
-            do do
-                ::my_label::
-              end
-              goto my_label
-            end
-            """)
-    },
-    'fornum': {
-        'raw': textwrap.dedent("""
-            for var=exp1,exp2,exp3 do
-            local something
-            end
-            """),
-        'exp': textwrap.dedent("""
-            for var=exp1,exp2,exp3 do
-              local something
-            end
-            """)
-    },
-    'call': {
-        'raw': textwrap.dedent("""
-            print('Lorem ipsum dolor sit amet, consectetur' ..
-            tostring(foo) + '.')
-            process(
-            data_1,
-            data_2,
-            true, 26)
-            process(
-            data_1,
-            data_2,
-            true, 26
-            )
-            """),
-        'exp': textwrap.dedent("""
-            print('Lorem ipsum dolor sit amet, consectetur' ..
-              tostring(foo) + '.')
-            process(
-              data_1,
-              data_2,
-              true, 26)
-            process(
-              data_1,
-              data_2,
-              true, 26
-            )
-            """)
-    },
-    'invoke': {
-        'raw': textwrap.dedent("""
-            model:print('Lorem ipsum dolor sit amet, consectetur' ..
-            tostring(foo) + '.')
-            model:process(
-            data_1,
-            data_2,
-            true, 26)
-            model:process(
-            data_1,
-            data_2,
-            true, 26
-            )
-            """),
-        'exp': textwrap.dedent("""
-            model:print('Lorem ipsum dolor sit amet, consectetur' ..
-              tostring(foo) + '.')
-            model:process(
-              data_1,
-              data_2,
-              true, 26)
-            model:process(
-              data_1,
-              data_2,
-              true, 26
-            )
-            """)
-    },
-}
-
-
 class IndentRuleTestCase(unittest.TestCase):
+    def setupTest(self, filePrefix, options=rules.IndentOptions()):
+        raw, exp = '', ''
+        with open('./test_sources/' + filePrefix + '_raw.lua', 'r') as content_file:
+            raw = content_file.read()
+        with open('./test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
+            exp = content_file.read()
+        formatted = rules.IndentRule(options).apply(raw)
+        self.assertEqual(formatted, exp)
+
+
     def test_no_indent(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['no_indent']['raw'])
-        self.assertEqual(src, CODE['no_indent']['exp'])
+        self.setupTest('no_indent')
 
     def test_for_indent(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['for_loop']['raw'])
-        self.assertEqual(src, CODE['for_loop']['exp'])
-
-    def test_continuation_line(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['continuation_line']['raw'])
-        self.assertEqual(src, CODE['continuation_line']['exp'])
-
-    def test_continuation_line_func(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['continuation_line_func']['raw'])
-        self.assertEqual(src, CODE['continuation_line_func']['exp'])
-
-    def test_nested_function(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['nested_functions']['raw'])
-        self.assertEqual(src, CODE['nested_functions']['exp'])
-
-    def test_table(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['table']['raw'])
-        self.assertEqual(src, CODE['table']['exp'])
-
-    def test_while(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['while']['raw'])
-        self.assertEqual(src, CODE['while']['exp'])
+        self.setupTest('for')
 
     def test_do_end(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['do_end']['raw'])
-        self.assertEqual(src, CODE['do_end']['exp'])
+        self.setupTest('do_end')
+
+    def test_continuation_line(self):
+        self.setupTest('continuation_line')
+
+    def test_continuation_line_func(self):
+        self.setupTest('continuation_line_func')
+
+    def test_nested_function(self):
+        self.setupTest('nested_functions')
+
+    def test_table(self):
+        self.setupTest('table')
+
+    def test_while(self):
+        self.setupTest('while')
 
     def test_repeat(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['repeat']['raw'])
-        self.assertEqual(src, CODE['repeat']['exp'])
+        self.setupTest('repeat')
 
     def test_if_else(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['if_else']['raw'])
-        self.assertEqual(src, CODE['if_else']['exp'])
+        self.setupTest('if_else')
 
     def test_label(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['label']['raw'])
-        self.assertEqual(src, CODE['label']['exp'])
+        self.setupTest('label')
 
     def test_fornum(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['fornum']['raw'])
-        self.assertEqual(src, CODE['fornum']['exp'])
+        self.setupTest('fornum')
 
     def test_call(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['call']['raw'])
-        self.assertEqual(src, CODE['call']['exp'])
+        self.setupTest('call')
 
     def test_invoke(self):
-        src = rules.IndentRule(rules.IndentOptions()).apply(CODE['invoke']['raw'])
-        self.assertEqual(src, CODE['invoke']['exp'])
+        self.setupTest('invoke')
