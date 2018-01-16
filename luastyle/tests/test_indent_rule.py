@@ -288,6 +288,34 @@ CODE = {
             end
             """)
     },
+    'call': {
+        'raw': textwrap.dedent("""
+            print('Lorem ipsum dolor sit amet, consectetur' ..
+            tostring(foo) + '.')
+            process(
+            data_1,
+            data_2,
+            true, 26)
+            process(
+            data_1,
+            data_2,
+            true, 26
+            )
+            """),
+        'exp': textwrap.dedent("""
+            print('Lorem ipsum dolor sit amet, consectetur' ..
+              tostring(foo) + '.')
+            process(
+              data_1,
+              data_2,
+              true, 26)
+            process(
+              data_1,
+              data_2,
+              true, 26
+            )
+            """)
+    },
 }
 
 
@@ -338,5 +366,8 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_fornum(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['fornum']['raw'])
-        print(src)
         self.assertEqual(src, CODE['fornum']['exp'])
+
+    def test_call(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['call']['raw'])
+        self.assertEqual(src, CODE['call']['exp'])
