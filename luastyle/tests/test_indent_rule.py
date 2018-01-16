@@ -316,6 +316,34 @@ CODE = {
             )
             """)
     },
+    'invoke': {
+        'raw': textwrap.dedent("""
+            model:print('Lorem ipsum dolor sit amet, consectetur' ..
+            tostring(foo) + '.')
+            model:process(
+            data_1,
+            data_2,
+            true, 26)
+            model:process(
+            data_1,
+            data_2,
+            true, 26
+            )
+            """),
+        'exp': textwrap.dedent("""
+            model:print('Lorem ipsum dolor sit amet, consectetur' ..
+              tostring(foo) + '.')
+            model:process(
+              data_1,
+              data_2,
+              true, 26)
+            model:process(
+              data_1,
+              data_2,
+              true, 26
+            )
+            """)
+    },
 }
 
 
@@ -371,3 +399,8 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_call(self):
         src = rules.IndentRule(WHITESPACE).apply(CODE['call']['raw'])
         self.assertEqual(src, CODE['call']['exp'])
+
+    def test_invoke(self):
+        src = rules.IndentRule(WHITESPACE).apply(CODE['invoke']['raw'])
+        print(src)
+        self.assertEqual(src, CODE['invoke']['exp'])

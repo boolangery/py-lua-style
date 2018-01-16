@@ -69,25 +69,6 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def exit_Repeat(self, node):
         self._level -= 1
 
-    def enter_Call(self, node):
-        self._level += 1
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber  # first line
-
-        # indent arg on several lines
-        for linetok in atokens.lines():
-            if linetok.lineNumber > line:
-                linetok.indent(self._level * self._indentValue)
-
-        # if the last ')' is alone on the line then dedent
-        last = atokens.last()
-        if last.type == Tokens.PARENT_L.value:
-            if len(last.line()) == 1 :
-                last.line().indent((self._level - 1) * self._indentValue)
-
-    def exit_Call(self, node):
-        self._level -= 1
-
     def enter_Function(self, node):
         self._level += 1
         atokens = self.tokens(node)
@@ -165,6 +146,44 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         self.indentBody(node)
 
     def exit_Fornum(self, node):
+        self._level -= 1
+
+    def enter_Call(self, node):
+        self._level += 1
+        atokens = self.tokens(node)
+        line  = atokens.first().lineNumber  # first line
+
+        # indent arg on several lines
+        for linetok in atokens.lines():
+            if linetok.lineNumber > line:
+                linetok.indent(self._level * self._indentValue)
+
+        # if the last ')' is alone on the line then dedent
+        last = atokens.last()
+        if last.type == Tokens.PARENT_L.value:
+            if len(last.line()) == 1 :
+                last.line().indent((self._level - 1) * self._indentValue)
+
+    def exit_Call(self, node):
+        self._level -= 1
+
+    def enter_Invoke(self, node):
+        self._level += 1
+        atokens = self.tokens(node)
+        line  = atokens.first().lineNumber  # first line
+
+        # indent arg on several lines
+        for linetok in atokens.lines():
+            if linetok.lineNumber > line:
+                linetok.indent(self._level * self._indentValue)
+
+        # if the last ')' is alone on the line then dedent
+        last = atokens.last()
+        if last.type == Tokens.PARENT_L.value:
+            if len(last.line()) == 1 :
+                last.line().indent((self._level - 1) * self._indentValue)
+
+    def exit_Invoke(self, node):
         self._level -= 1
 
     def enter_Table(self, node):
