@@ -130,6 +130,14 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 if linetok.lineNumber > line:
                     linetok.indent(self.currentIndent())
 
+        # indent orelse
+        if isinstance(node.orelse, list):
+            for n in node.orelse:
+                bodytok = self.tokens(n)
+                for linetok in bodytok.lines():
+                    if linetok.lineNumber > line:
+                        linetok.indent(self.currentIndent())
+
     def exit_If(self, node):
         self._level -= 1
 
@@ -149,7 +157,8 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
             for n in node.orelse:
                 bodytok = self.tokens(n)
                 for linetok in bodytok.lines():
-                    linetok.indent(self.currentIndent())
+                    if linetok.lineNumber > line:
+                        linetok.indent(self.currentIndent())
 
     def enter_Fornum(self, node):
         self._level += 1

@@ -22,3 +22,13 @@ elseif foo then
 local a = 42
 end
 end
+      if foo then
+   print(foo)
+   if bar then
+    print(bar)
+          else
+    print('error')
+  end
+        else
+  print('error')
+end
