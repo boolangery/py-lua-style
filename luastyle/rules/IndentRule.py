@@ -46,6 +46,18 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 if linetok.lineNumber > line:
                     linetok.indent(self.currentIndent())
 
+    def smartIndent(self, node, startType):
+        atokens = self.tokens(node)
+        firsttok = atokens[0]
+        if firsttok.type != startType.value:
+            firsttok = firsttok.nextOfType(startType)
+
+        lasttok = atokens[-1]
+        nodetok = self.tokens(node)[1:-1]
+        for linetok in nodetok.lines():
+            if (linetok.lineNumber > firsttok.lineNumber) and (linetok.lineNumber < lasttok.lineNumber):
+                linetok.indent(self.currentIndent())
+
     def enter_LocalAssign(self, node):
         pass
         # atokens = self.tokens(node)
@@ -67,7 +79,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Do(self, node):
         self._level += 1
-        self.indentBody(node)
+        self.smartIndent(node, Tokens.DO)
 
     def exit_Do(self, node):
         self._level -= 1
@@ -108,12 +120,13 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Forin(self, node):
         self._level += 1
+        self.smartIndent(node, Tokens.DO)
 
         # indent body
-        for n in node.body:
-            bodytok = self.tokens(n)
-            for linetok in bodytok.lines():
-                linetok.indent(self.currentIndent())
+        #for n in node.body:
+        #    bodytok = self.tokens(n)
+        #    for linetok in bodytok.lines():
+        #        linetok.indent(self.currentIndent())
 
     def exit_Forin(self, node):
         self._level -= 1
@@ -162,7 +175,8 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Fornum(self, node):
         self._level += 1
-        self.indentBody(node)
+        # self.indentBody(node)
+        self.smartIndent(node, Tokens.DO)
 
     def exit_Fornum(self, node):
         self._level -= 1
