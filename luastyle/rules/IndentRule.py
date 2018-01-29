@@ -17,223 +17,152 @@ class IndentOptions():
         self.functionContinuationLineLevel = 2
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
-    def __init__(self, atokens, options):
-        self._atokens = atokens
+    def __init__(self, options):
         self._options = options
         self._level = 0
 
     def currentIndent(self, offset = 0):
         return (self._level + offset) * self._options.indentSize
 
-    def tokens(self, node):
-        return self._atokens.fromAST(node)
+    def enter_Chunk(self, node):
+        pass
 
-    def stripTokens(self, atokens, allowedWs=1):
-        """Remove inter-token non needed whitespace"""
-        for ltokens in atokens.lines():
-            for i in range(0, len(ltokens)-1):
-                wsToRemove = ltokens[i+1].column - (ltokens[i].column + len(ltokens[i].text)) - allowedWs
-                if wsToRemove > 0:
-                    ltokens[i+1].column = ltokens[i+1].column - wsToRemove
-                    logging.debug('removing whitespace beetween "' + ltokens[i].text + '" and "' + ltokens[i+1].text + '"')
-
-    def indentBody(self, node):
-        atokens = self.tokens(node)
-        line = atokens.first().lineNumber
-        for n in node.body:
-            nodetok = self.tokens(n)
-            for linetok in nodetok.lines():
-                if linetok.lineNumber > line:
-                    linetok.indent(self.currentIndent())
-
-    def smartIndent(self, node, startType):
-        atokens = self.tokens(node)
-        firsttok = atokens[0]
-        if firsttok.type != startType.value:
-            firsttok = firsttok.nextOfType(startType)
-
-        lasttok = atokens[-1]
-        nodetok = self.tokens(node)[1:-1]
-        for linetok in nodetok.lines():
-            if (linetok.lineNumber > firsttok.lineNumber) and (linetok.lineNumber < lasttok.lineNumber):
-                linetok.indent(self.currentIndent())
+    def isConcatAssign(self, node):
+        return (node.values and not (
+                isinstance(node.values[0], astnodes.AnonymousFunction) or
+                isinstance(node.values[0], astnodes.Table)))
 
     def enter_LocalAssign(self, node):
-        pass
-        # atokens = self.tokens(node)
-        # lines = atokens.lines()
-        # lines[0].indent(self.currentIndent())
+        if self.isConcatAssign(node):
+            logging.debug('LocalAssign is a concat assign: ' + node.edit().toSource())
+            self._level += 1
+
+        editor = node.edit()
+        first = editor.first()
+        for line in editor.lines():
+            if line.lineNumber > first.lineNumber:
+                line.indent(self.currentIndent())
+
+    def exit_LocalAssign(self, node):
+        if self.isConcatAssign(node):
+            self._level -= 1
 
     def enter_Assign(self, node):
-        if len(node.values)>0 and isinstance(node.values[0], astnodes.Concat):
-            atokens = self.tokens(node)
-            for linetok in atokens.lines()[1:]:
-                linetok.indent(self.currentIndent(1))
+        if self.isConcatAssign(node):
+            self._level += 1
+
+        editor = node.edit()
+        first = editor.first()
+        for line in editor.lines():
+            if line.lineNumber > first.lineNumber:
+                line.indent(self.currentIndent())
+
+    def exit_Assign(self, node):
+        if self.isConcatAssign(node):
+            self._level -= 1
+
 
     def enter_While(self, node):
         self._level += 1
-        self.indentBody(node)
+        node.body.edit().indent(self.currentIndent())
 
     def exit_While(self, node):
         self._level -= 1
 
     def enter_Do(self, node):
         self._level += 1
-        self.smartIndent(node, Tokens.DO)
+        node.body.edit().indent(self.currentIndent())
 
     def exit_Do(self, node):
         self._level -= 1
 
     def enter_Repeat(self, node):
         self._level += 1
-        self.indentBody(node)
+        node.body.edit().indent(self.currentIndent())
 
     def exit_Repeat(self, node):
         self._level -= 1
 
     def enter_Function(self, node):
         self._level += 1
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber
-
-        # grab all tokens representing function args
-        argstok = atokens.first().nextOfType(Tokens.PARENT_R).grabUntil(Tokens.PARENT_L)
-        # indent argument on several lines
-        for linetok in argstok.lines():
-            if linetok.lineNumber > line:
-                linetok.indent(self.currentIndent(1))
-
-        # indent body if not inline
-        for n in node.body:
-            bodytok = self.tokens(n)
-            for linetok in bodytok.lines():
-                if linetok.lineNumber > line:
-                    linetok.indent(self.currentIndent())
-
-        # dedent end if first token on line
-        endl = atokens.last().line()
-        if endl.first() == atokens.last():
-            endl.indent(self.currentIndent(-1))
+        node.body.edit().indent(self.currentIndent())
+        node.args.edit().indent(self.currentIndent(1))
 
     def exit_Function(self, node):
         self._level -= 1
 
+    def enter_Method(self, node):
+        self._level += 1
+        node.body.edit().indent(self.currentIndent())
+
+    def exit_Method(self, node):
+        self._level -= 1
+
+    def enter_AnonymousFunction(self, node):
+        self._level += 1
+        node.body.edit().indent(self.currentIndent())
+
+    def exit_AnonymousFunction(self, node):
+        self._level -= 1
+
     def enter_Forin(self, node):
         self._level += 1
-        self.smartIndent(node, Tokens.DO)
-
-        # indent body
-        #for n in node.body:
-        #    bodytok = self.tokens(n)
-        #    for linetok in bodytok.lines():
-        #        linetok.indent(self.currentIndent())
+        node.body.edit().indent(self.currentIndent())
 
     def exit_Forin(self, node):
         self._level -= 1
 
     def enter_If(self, node):
         self._level += 1
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber  # first line
+        node.body.edit().indent(self.currentIndent())
 
-        # indent body
-        for n in node.body:
-            bodytok = self.tokens(n)
-            for linetok in bodytok.lines():
-                if linetok.lineNumber > line:
-                    linetok.indent(self.currentIndent())
-
-        # indent orelse
-        if isinstance(node.orelse, list):
-            for n in node.orelse:
-                bodytok = self.tokens(n)
-                for linetok in bodytok.lines():
-                    if linetok.lineNumber > line:
-                        linetok.indent(self.currentIndent())
+        # indent orelse body
+        if node.orelse and not isinstance(node.orelse, astnodes.ElseIf):
+            node.orelse.edit().indent(self.currentIndent())
 
     def exit_If(self, node):
         self._level -= 1
 
     def enter_ElseIf(self, node):
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber  # first line
+        node.body.edit().indent(self.currentIndent())
 
-        # indent body
-        for n in node.body:
-            bodytok = self.tokens(n)
-            for linetok in bodytok.lines():
-                if linetok.lineNumber > line:
-                    linetok.indent(self.currentIndent())
-
-        # indent orelse
-        if isinstance(node.orelse, list):
-            for n in node.orelse:
-                bodytok = self.tokens(n)
-                for linetok in bodytok.lines():
-                    if linetok.lineNumber > line:
-                        linetok.indent(self.currentIndent())
+        # indent orelse body
+        if node.orelse and not isinstance(node.orelse, astnodes.ElseIf):
+            node.orelse.edit().indent(self.currentIndent())
 
     def enter_Fornum(self, node):
         self._level += 1
-        # self.indentBody(node)
-        self.smartIndent(node, Tokens.DO)
+        node.body.edit().indent(self.currentIndent())
+
 
     def exit_Fornum(self, node):
         self._level -= 1
 
     def enter_Call(self, node):
         self._level += 1
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber  # first line
-
-        # indent arg on several lines
-        for linetok in atokens.lines():
-            if linetok.lineNumber > line:
-                linetok.indent(self.currentIndent())
-
-        # if the last ')' is alone on the line then dedent
-        last = atokens.last()
-        if last.type == Tokens.PARENT_L.value:
-            if len(last.line()) == 1 :
-                last.line().indent(self.currentIndent(-1))
+        node.args.edit().indent(self.currentIndent(0))
 
     def exit_Call(self, node):
         self._level -= 1
 
     def enter_Invoke(self, node):
-        self._level += 1
-        atokens = self.tokens(node)
-        line  = atokens.first().lineNumber  # first line
-
-        # indent arg on several lines
-        for linetok in atokens.lines():
-            if linetok.lineNumber > line:
-                linetok.indent(self.currentIndent())
-
-        # if the last ')' is alone on the line then dedent
-        last = atokens.last()
-        if last.type == Tokens.PARENT_L.value:
-            if len(last.line()) == 1 :
-                last.line().indent(self.currentIndent(-1))
+        node.args.edit().indent(self.currentIndent(1))
 
     def exit_Invoke(self, node):
-        self._level -= 1
+        pass
 
     def enter_Table(self, node):
         self._level += 1
-        atokens = self.tokens(node)
+        editor = node.edit()
+        editor.indent(self.currentIndent())
 
-        # indent table body, skip first line
-        for linetok in atokens.lines()[1:]:
-            linetok.indent(self.currentIndent())
-
-        # dedent '}' if no other table token before
-        brackettok = atokens.last()
-        if brackettok.isFirstOnLine():
-            brackettok.line().indent(self.currentIndent(-1))
+        closingBrace = editor.lastOfType(Tokens.CBRACE)
+        if closingBrace.isFirstOnLine():
+            closingBrace.line().indent(self.currentIndent(-1))
 
     def exit_Table(self, node):
         self._level -= 1
+
 
 
 class IndentRule(FormatterRule):
@@ -245,7 +174,12 @@ class IndentRule(FormatterRule):
         self._options = options
 
     def apply(self, input):
-        atokens = asttokens.parse(input)
+        # strip
+        output = []
+        for line in input.splitlines():
+            output.append(line.strip())
+        input = '\n'.join(map(str, output)) + '\n'
+
         tree = None
 
         # try to get AST tree, do nothing if invalid source code is provided
@@ -255,11 +189,7 @@ class IndentRule(FormatterRule):
             logging.error(str(e))
             return input
 
-        # strip left all
-        for aline in atokens.lines():
-            aline.stripl()
-
-        IndentVisitor(atokens, self._options).visit(tree)
+        IndentVisitor(self._options).visit(tree)
 
         # simply return modified tokens to source
-        return atokens.toSource()
+        return tree.edit().allToSource()

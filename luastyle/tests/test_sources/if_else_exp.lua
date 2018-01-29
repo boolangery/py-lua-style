@@ -9,12 +9,16 @@ elseif op == "/" then
 else
   error("invalid operation")
 end
+
 if true then foo = 'bar' else foo = nil end
+
 if true then
   print('hello')
 end
+
 if true then
   print('hello') end
+
 if nested then
   if nested then
     if nested then print('ok Im nested') end
@@ -22,6 +26,7 @@ if nested then
     local a = 42
   end
 end
+
 if foo then
   print(foo)
   if bar then
@@ -31,4 +36,14 @@ if foo then
   end
 else
   print('error')
+end
+
+if not parm then
+  -- extra unnamed parameters are indexed starting at 1
+  parm = iextra
+  ps = { type = 'string' }
+  parms[parm] = ps
+  iextra = iextra + 1
+else
+  ps = parms[parm]
 end

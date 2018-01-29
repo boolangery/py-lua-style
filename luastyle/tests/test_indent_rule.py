@@ -12,13 +12,14 @@ class IndentRuleTestCase(unittest.TestCase):
         with open('./test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
             exp = content_file.read()
         formatted = rules.IndentRule(options).apply(raw)
+        print(formatted)
         self.assertEqual(formatted, exp)
 
 
     def test_no_indent(self):
         self.setupTest('no_indent')
 
-    def test_for_indent(self):
+    def test_for(self):
         self.setupTest('for')
 
     def test_do_end(self):
@@ -29,6 +30,9 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_continuation_line_func(self):
         self.setupTest('continuation_line_func')
+
+    def test_function(self):
+        self.setupTest('function')
 
     def test_nested_function(self):
         self.setupTest('nested_functions')
@@ -57,5 +61,3 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_invoke(self):
         self.setupTest('invoke')
 
-    def test_function(self):
-        self.setupTest('function')

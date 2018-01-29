@@ -1,19 +1,19 @@
---- do program
---- @param test
-do
+          --- do program
+ --- @param test
+  do
 local a -- a local var
 -- comment
 end
-do local a end
+            do local a end
 do do do local b end end end
-do
+      do
           -- local var
 local a
 do
 local b-- local var
-do
+ do
 local c = a + b
-end
-end
+  end
+  end
       -- end
-end
+ end
