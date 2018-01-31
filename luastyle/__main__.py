@@ -4,46 +4,74 @@ import os
 import logging
 from optparse import OptionParser
 import luastyle.rules
+import concurrent.futures
 
 
 def abort(msg):
     logging.error(msg)
     sys.exit()
 
-def processFile(filepath, rules, rewrite):
-    # read whole file:
-    logging.info('Working on file ' + filepath)
+def process(filepath, rules, rewrite):
     input = ''
     with open(filepath) as file:
         input = file.read()
-
     output = input
     for rule in rules:
         logging.debug('Applying ' + rule.__class__.__name__)
         output = rule.apply(output)
 
-    if not rewrite:
-        logging.info('done.')
-        logging.debug(output)
-    else:
+    if  rewrite:
         f = open(filepath, 'r+')
         f.seek(0)
         f.write(output)
         f.truncate()
         f.close()
-        logging.info('file rewrited.')
 
+    return output
+
+# multi-threaded
+def processFiles(files, rules, rewrite, jobs):
+    # We can use a with statement to ensure threads are cleaned up promptly
+    print(str(len(files)) + ' file(s) to process')
+
+    processed = 0
+    print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed')
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
+        # Start process operations and mark each future with its filename
+        future_to_file = {executor.submit(process, file, rules, rewrite): file for file in files}
+        for future in concurrent.futures.as_completed(future_to_file):
+            file = future_to_file[future]
+            try:
+                output = future.result()
+            except Exception as exc:
+                print('%r generated an exception: %s' % (file, exc))
+            else:
+                processed += 1
+                print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed, last is ' + file)
+                sys.stdout.flush()
+            
 def main():
     # parse options:
     usage = 'usage: %prog [options] filename'
     parser = OptionParser(usage=usage)
     parser.add_option('-d', '--debug', action='store_true',  dest='debug', help='enable debugging messages', default=False)
-    parser.add_option('-w', '--rewrite', action='store_true',  dest='rewrite', help='rewrite current file', default=False)
+    parser.add_option('-s', '--simu', action='store_true', dest='simu', help='do not rewrite file (simulation)', default=False)
     parser.add_option('-r', '--recursive', action='store_true',  dest='recursive', help='indent all files in directory', default=False)
+    # multi-threading
+    parser.add_option('-j', '--jobs', metavar='NUMBER', type="int",  dest='jobs', help='number of parallel jobs in recursive mode', default=4)
+    # optional rules
     parser.add_option('--with-table-align', action='store_true',  dest='tableAlign', help='enable table alignment', default=False)
+    # indentRule options:
+    default = luastyle.rules.IndentOptions()
     parser.add_option('--with-indent-value', metavar='NUMBER', type="int", dest='indentValue', help='configure the number of whitespace per indentation level', default=2)
-    (options, args) = parser.parse_args()
+    parser.add_option('--with-assign-cont-level', metavar='NUMBER', type="int", dest='assignContLevel',
+                      help='configure the level of continuation lines in assign', default=default.assignContinuationLineLevel)
+    parser.add_option('--with-func-cont-level', metavar='NUMBER', type="int", dest='funcContLevel',
+                      help='configure the level of continuation lines in function arguments',
+                      default=default.functionContinuationLineLevel)
 
+    (options, args) = parser.parse_args()
     # check argument:
     if not len(args) > 0:
         abort('Expected a path')
@@ -58,10 +86,13 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
     else:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
+
     # IndentRule options:
     indentOptions = luastyle.rules.IndentOptions()
     indentOptions.indentType = luastyle.rules.IndentType.SPACE
     indentOptions.indentSize = options.indentValue
+    indentOptions.assignContinuationLineLevel = options.assignContLevel
+    indentOptions.functionContinuationLineLevel = options.funcContLevel
 
     # optional rules:
     optionalRules = []
@@ -73,13 +104,17 @@ def main():
         luastyle.rules.StripRule(),
         luastyle.rules.EndingNewLineRule()]
 
+    filenames = []
     if not options.recursive:
-        processFile(args[0], rules, options.rewrite)
+        filenames.append(args[0])
     else:
+        # build a file list
         for root, subdirs, files in os.walk(args[0]):
             for filename in files:
                 filepath = os.path.join(root, filename)
-                processFile(filepath, rules, options.rewrite)
+                filenames.append(filepath)
+
+    processFiles(filenames, rules, not options.simu, options.jobs)
 
 if __name__ == '__main__':
     main()
