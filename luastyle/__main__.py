@@ -5,7 +5,7 @@ import logging
 from optparse import OptionParser
 import luastyle.rules
 import concurrent.futures
-
+import time
 
 def abort(msg):
     logging.error(msg)
@@ -27,7 +27,7 @@ def process(filepath, rules, rewrite):
         f.truncate()
         f.close()
 
-    return output
+    return len(output.split('\n'))
 
 # multi-threaded
 def processFiles(files, rules, rewrite, jobs):
@@ -37,20 +37,27 @@ def processFiles(files, rules, rewrite, jobs):
     processed = 0
     print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed')
 
+    # some stats
+    start = time.time()
+    totalLines = 0
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         # Start process operations and mark each future with its filename
         future_to_file = {executor.submit(process, file, rules, rewrite): file for file in files}
         for future in concurrent.futures.as_completed(future_to_file):
             file = future_to_file[future]
             try:
-                output = future.result()
+                totalLines += future.result()
             except Exception as exc:
                 print('%r generated an exception: %s' % (file, exc))
             else:
                 processed += 1
                 print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed, last is ' + file)
                 sys.stdout.flush()
-            
+
+    end = time.time()
+    print(str(totalLines) + ' source lines processed in ' + str(round(end - start, 2)) + ' s')
+
 def main():
     # parse options:
     usage = 'usage: %prog [options] filename'
