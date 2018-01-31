@@ -6,7 +6,7 @@ end
 
 callback(function(arg1)
     print(arg1)
-  end)
+end)
 
 callback(function(arg1)
     print(arg1)

@@ -35,7 +35,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_LocalAssign(self, node):
         if self.isConcatAssign(node):
             logging.debug('LocalAssign is a concat assign: ' + node.edit().toSource())
-            self._level += 1
+            self._level += self._options.assignContinuationLineLevel
 
         editor = node.edit()
         first = editor.first()
@@ -45,11 +45,11 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def exit_LocalAssign(self, node):
         if self.isConcatAssign(node):
-            self._level -= 1
+            self._level -= self._options.assignContinuationLineLevel
 
     def enter_Assign(self, node):
         if self.isConcatAssign(node):
-            self._level += 1
+            self._level += self._options.assignContinuationLineLevel
 
         editor = node.edit()
         first = editor.first()
@@ -59,7 +59,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def exit_Assign(self, node):
         if self.isConcatAssign(node):
-            self._level -= 1
+            self._level -= self._options.assignContinuationLineLevel
 
 
     def enter_While(self, node):
@@ -140,10 +140,22 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Call(self, node):
         self._level += 1
-        node.args.edit().indent(self.currentIndent(0))
+        node.args.edit().indent(self.currentIndent())
 
     def exit_Call(self, node):
         self._level -= 1
+        editor = node.edit()
+
+        # the rule for indenting the last line containing CPAR:
+        # indent on same level as call opening OPAR if
+        # the CPAR is the first token on line or if previous token
+        # is a [CBRACE, END]
+        closingParen = editor.lastOfType(Tokens.CPAR)
+        if closingParen:
+            prev = closingParen.prev()
+            if prev and prev.type in [Tokens.CBRACE.value, Tokens.END.value]:
+                if prev.isFirstOnLine():
+                    closingParen.line().indent(self.currentIndent())
 
     def enter_Invoke(self, node):
         node.args.edit().indent(self.currentIndent(1))
@@ -156,12 +168,12 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         editor = node.edit()
         editor.indent(self.currentIndent())
 
-        closingBrace = editor.lastOfType(Tokens.CBRACE)
-        if closingBrace.isFirstOnLine():
-            closingBrace.line().indent(self.currentIndent(-1))
-
     def exit_Table(self, node):
         self._level -= 1
+        editor = node.edit()
+        closingBrace = editor.lastOfType(Tokens.CBRACE)
+        if closingBrace.isFirstOnLine():
+            closingBrace.line().indent(self.currentIndent())
 
 
 

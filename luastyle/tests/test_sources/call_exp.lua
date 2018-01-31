@@ -15,5 +15,11 @@ process(
 -- end of file
 
 setmetatable(lapp, {
-  __call = function(tbl,str,args) return lapp.process_options_string(str,args) end,
+    __call = function(tbl,str,args) return lapp.process_options_string(str,args) end,
 })
+
+setmetatable(lapp, {
+    __call = function(tbl,str,args) return lapp.process_options_string(str,args) end,
+  }, 13654,
+  'foo'
+)
