@@ -73,6 +73,10 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         self._level += 1
         node.body.edit().indent(self.currentIndent())
 
+        print('begin')
+        for t in node.body.edit():
+            print(t)
+
     def exit_Do(self, node):
         self._level -= 1
 
@@ -86,9 +90,17 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Function(self, node):
         self._level += 1
         node.body.edit().indent(self.currentIndent())
-        node.args.edit().indent(self.currentIndent(1))
+        node.args.edit().indent(self.currentIndent(self._options.functionContinuationLineLevel - 1))
 
     def exit_Function(self, node):
+        self._level -= 1
+
+    def enter_LocalFunction(self, node):
+        self._level += 1
+        node.body.edit().indent(self.currentIndent())
+        node.args.edit().indent(self.currentIndent(self._options.functionContinuationLineLevel - 1))
+
+    def exit_LocalFunction(self, node):
         self._level -= 1
 
     def enter_Method(self, node):

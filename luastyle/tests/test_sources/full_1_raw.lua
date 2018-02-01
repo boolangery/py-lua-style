@@ -36,3 +36,22 @@
    )
   end
  )
+
+    --- Date and Date Format classes.
+-- See  @{05-dates.md|the Guide}.
+--
+-- Dependencies: `pl.class`, `pl.stringx`, `pl.utils`
+       -- @classmod pl.Date
+-- @pragma nostrip
+
+  local class = require 'pl.class'
+  local os_time, os_date = os.time, os.date
+  local stringx = require 'pl.stringx'
+local utils = require 'pl.utils'
+local assert_arg,assert_string = utils.assert_arg,utils.assert_string
+
+local Date = class()
+Date.Format = class()
+
+ --- Date constructor.
+  -- @param t this can be either
