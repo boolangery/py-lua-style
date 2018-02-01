@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys
 import os
-import logging
-from optparse import OptionParser
-import luastyle.rules
-import concurrent.futures
 import time
+import logging
+import concurrent.futures
+from optparse import OptionParser
+from luastyle.core import FilesProcessor
+import luastyle.rules
 
 def abort(msg):
     logging.error(msg)
@@ -111,17 +112,18 @@ def main():
         luastyle.rules.StripRule(),
         luastyle.rules.EndingNewLineRule()]
 
+    # build a filename list
     filenames = []
     if not options.recursive:
         filenames.append(args[0])
     else:
-        # build a file list
         for root, subdirs, files in os.walk(args[0]):
             for filename in files:
                 filepath = os.path.join(root, filename)
                 filenames.append(filepath)
 
-    processFiles(filenames, rules, not options.simu, options.jobs)
+    # process files
+    FilesProcessor(rules, not options.simu, options.jobs).run(filenames)
 
 if __name__ == '__main__':
     main()
