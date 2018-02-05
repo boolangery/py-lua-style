@@ -23,3 +23,11 @@ setmetatable(lapp, {
 }, 13654,
 'foo'
 )
+
+  process {
+  processor {
+     type = 'numeric',
+    result = function(data) print(data) end
+   },
+   input = {1, 2, 3, 4}
+ }

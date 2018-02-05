@@ -150,12 +150,23 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def exit_Fornum(self, node):
         self._level -= 1
 
+    def isClassicCall(self, node):
+        """Return true is its a call with parenthesis."""
+        first = node.args.edit().first()
+        if first:
+            prev = first.prev()
+            if prev:
+                return prev.type == Tokens.OPAR.value
+        return False
+
     def enter_Call(self, node):
-        self._level += 1
+        if self.isClassicCall(node):
+            self._level += 1
         node.args.edit().indent(self.currentIndent())
 
     def exit_Call(self, node):
-        self._level -= 1
+        if self.isClassicCall(node):
+            self._level -= 1
         editor = node.edit()
 
         # the rule for indenting the last line containing CPAR:
