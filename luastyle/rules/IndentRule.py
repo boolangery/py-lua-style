@@ -73,10 +73,6 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         self._level += 1
         node.body.edit().indent(self.currentIndent())
 
-        print('begin')
-        for t in node.body.edit():
-            print(t)
-
     def exit_Do(self, node):
         self._level -= 1
 
@@ -190,6 +186,11 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         self._level += 1
         editor = node.edit()
         editor.indent(self.currentIndent())
+
+        # opening brace
+        openingBrace = editor.first()
+        if openingBrace.isFirstOnLine():
+            openingBrace.line().indent(self.currentIndent(-1))
 
     def exit_Table(self, node):
         self._level -= 1
