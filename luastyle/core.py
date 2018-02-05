@@ -2,8 +2,36 @@
 import sys
 import os
 import logging
-import concurrent.futures
 import time
+import configparser
+import luastyle.rules
+import concurrent.futures
+
+class ConfigurationReader():
+    FILENAME = 'luastyle.conf'
+
+    def writeDefault(self):
+        indentDefaultOption = luastyle.rules.IndentOptions()
+        config = configparser.ConfigParser()
+
+        config['INDENTATION'] = {
+            'IndentType': self.indentType.value,
+            'IndentSize': self.indentSize,
+            'AssignementContinuationLineLevel': self.assignContinuationLineLevel,
+            'FunctionContinuationLineLevel': self.functionContinuationLineLevel,
+        }
+
+        filepath = os.path.join(os.path.expanduser("~"), FILENAME)
+        with open(filepath, 'w') as configfile:
+            config.write(configfile)
+
+        # config = None
+        # for loc in os.curdir, os.path.expanduser("~"), "/etc/luastyle", os.environ.get("LUASTYLE_CONF"):
+        #     try:
+        #         with open(os.path.join(loc, "myproject.conf")) as source:
+        #             config.readfp(source)
+        #     except IOError:
+        #         pass
 
 class FilesProcessor():
     def __init__(self, rules, rewrite, jobs):
