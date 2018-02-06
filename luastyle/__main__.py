@@ -78,6 +78,8 @@ def main():
     parser.add_option('--with-func-cont-level', metavar='NUMBER', type="int", dest='funcContLevel',
                       help='configure the level of continuation lines in function arguments',
                       default=default.functionContinuationLineLevel)
+    parser.add_option('--with-comma-check', action='store_true', dest='commaCheck', help='check spaces after comma',
+                      default=default.checkSpaceAfterComma)
 
     (options, args) = parser.parse_args()
     # check argument:
@@ -101,6 +103,7 @@ def main():
     indentOptions.indentSize = options.indentValue
     indentOptions.assignContinuationLineLevel = options.assignContLevel
     indentOptions.functionContinuationLineLevel = options.funcContLevel
+    indentOptions.checkSpaceAfterComma = options.commaCheck
 
     # optional rules:
     optionalRules = []

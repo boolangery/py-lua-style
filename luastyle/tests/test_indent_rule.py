@@ -70,3 +70,6 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_comments(self):
         self.setupTest('comments')
+
+    def test_space_comma(self):
+        self.setupTest('space_comma')

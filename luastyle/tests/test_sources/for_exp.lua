@@ -1,5 +1,5 @@
 -- normal for
-for i,v in ipairs(t) do -- iterate t
+for i, v in ipairs(t) do -- iterate t
   -- print value
   print(v) -- printing
   -- printed

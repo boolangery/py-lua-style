@@ -3,7 +3,7 @@
 -- @pragma nostrip
 
 local class = require 'pl.class'
-local assert_arg,assert_string = utils.assert_arg,utils.assert_string
+local assert_arg, assert_string = utils.assert_arg, utils.assert_string
 
 local Date = class()
 Date.Format = class()
@@ -12,9 +12,9 @@ Date.Format = class()
 -- @param t this can be either
 -- @param ...  true if  Universal Coordinated Time, or two to five numbers: month,day,hour,min,sec
 -- @function Date
-function Date:_init(t,...)
+function Date:_init(t, ...)
   local time
-  local nargs = select('#',...)
+  local nargs = select('#', ...)
   if nargs > 2 then
     local extra = {...}
     local year = t
@@ -28,7 +28,7 @@ function Date:_init(t,...)
     }
   end
   if nargs == 1 then
-    self.utc = select(1,...) == true
+    self.utc = select(1, ...) == true
   end
   if t == nil or t == 'utc' then
     time = os_time()
@@ -43,7 +43,7 @@ function Date:_init(t,...)
     else
     end
   else
-    error("bad type for Date constructor: "..type(t),2)
+    error("bad type for Date constructor: "..type(t), 2)
   end
   self:set(time)
 end

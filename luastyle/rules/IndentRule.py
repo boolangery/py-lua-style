@@ -16,6 +16,8 @@ class IndentOptions():
         self.assignContinuationLineLevel = 1
         self.functionContinuationLineLevel = 2
 
+        self.checkSpaceAfterComma = True
+
 class IndentVisitor(ast.ASTRecursiveVisitor):
     def __init__(self, options):
         self._options = options
@@ -199,7 +201,9 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         if closingBrace.isFirstOnLine():
             closingBrace.line().indent(self.currentIndent())
 
-
+CHECK_SPACE_AFTER_COMMA_IF_NOT_IN = [
+    Tokens.NEWLINE.value
+]
 
 class IndentRule(FormatterRule):
     """
@@ -225,7 +229,19 @@ class IndentRule(FormatterRule):
             logging.error(str(e))
             return input
 
+        # indent
         IndentVisitor(self._options).visit(tree)
+
+        # check SPACE after comma
+        if self._options.checkSpaceAfterComma:
+            for t in tree.edit():
+                if t.type == Tokens.COMMA.value:
+                    next = t.next([])  # no ignore
+                    if next:
+                        if next.type == Tokens.SPACE.value:
+                            next.text = ' '
+                        elif next.type not in CHECK_SPACE_AFTER_COMMA_IF_NOT_IN:
+                            t.insertRight(Tokens.SPACE, ' ')
 
         # simply return modified tokens to source
         return tree.edit().allToSource()
