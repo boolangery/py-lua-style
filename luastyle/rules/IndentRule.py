@@ -30,9 +30,9 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         pass
 
     def isConcatAssign(self, node):
-        return (node.values and not (
-                isinstance(node.values[0], astnodes.AnonymousFunction) or
-                isinstance(node.values[0], astnodes.Table)))
+        return (node.values and type(node.values[0]) in [
+            astnodes.Concat
+        ])
 
     def enter_LocalAssign(self, node):
         if self.isConcatAssign(node):
@@ -51,6 +51,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Assign(self, node):
         if self.isConcatAssign(node):
+            logging.debug('Assign is a concat assign: ' + node.edit().toSource())
             self._level += self._options.assignContinuationLineLevel
 
         editor = node.edit()
@@ -157,6 +158,19 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 return prev.type == Tokens.OPAR.value
         return False
 
+    def callIndentLast(self, node, type):
+        # the rule for indenting the last line containing CPAR:
+        # indent on same level as call opening OPAR if
+        # the CPAR is the first token on line or if previous token
+        # is a [CBRACE, END]
+        editor = node.edit()
+        closingParen = editor.lastOfType(type)
+        if closingParen:
+            prev = closingParen.prev()
+            if prev and prev.type in [Tokens.CBRACE.value, Tokens.END.value]:
+                if prev.isFirstOnLine():
+                    closingParen.line().indent(self.currentIndent())
+
     def enter_Call(self, node):
         if self.isClassicCall(node):
             self._level += 1
@@ -165,24 +179,17 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def exit_Call(self, node):
         if self.isClassicCall(node):
             self._level -= 1
-        editor = node.edit()
-
-        # the rule for indenting the last line containing CPAR:
-        # indent on same level as call opening OPAR if
-        # the CPAR is the first token on line or if previous token
-        # is a [CBRACE, END]
-        closingParen = editor.lastOfType(Tokens.CPAR)
-        if closingParen:
-            prev = closingParen.prev()
-            if prev and prev.type in [Tokens.CBRACE.value, Tokens.END.value]:
-                if prev.isFirstOnLine():
-                    closingParen.line().indent(self.currentIndent())
+        self.callIndentLast(node, Tokens.CPAR)
 
     def enter_Invoke(self, node):
-        node.args.edit().indent(self.currentIndent(1))
+        if self.isClassicCall(node):
+            self._level += 1
+        node.args.edit().indent(self.currentIndent())
 
     def exit_Invoke(self, node):
-        pass
+        if self.isClassicCall(node):
+            self._level -= 1
+        self.callIndentLast(node, Tokens.CPAR)
 
     def enter_Table(self, node):
         self._level += 1
