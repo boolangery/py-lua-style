@@ -6,6 +6,8 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 class IndentRuleTestCase(unittest.TestCase):
     def setupTest(self, filePrefix, options=rules.IndentOptions()):
+        options.checkSpaceAfterComma = True
+
         self.maxDiff = None
         raw, exp = '', ''
         with open('./test_sources/' + filePrefix + '_raw.lua', 'r') as content_file:

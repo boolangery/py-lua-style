@@ -16,7 +16,7 @@ class IndentOptions():
         self.assignContinuationLineLevel = 1
         self.functionContinuationLineLevel = 2
 
-        self.checkSpaceAfterComma = True
+        self.checkSpaceAfterComma = False
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
     def __init__(self, options):
