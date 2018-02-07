@@ -29,13 +29,20 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Chunk(self, node):
         pass
 
-    def isConcatAssign(self, node):
+    def indentAssign(self, node):
+        """Check if we need to indent this assignment.
+
+        Rules to indent are:
+            * At least one value and first value type is a Concat
+            * Several values
+
+        """
         return (node.values and type(node.values[0]) in [
             astnodes.Concat
-        ])
+        ]) or len(node.values) > 1
 
     def enter_LocalAssign(self, node):
-        if self.isConcatAssign(node):
+        if self.indentAssign(node):
             logging.debug('LocalAssign is a concat assign: ' + node.edit().toSource())
             self._level += self._options.assignContinuationLineLevel
 
@@ -46,11 +53,11 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 line.indent(self.currentIndent())
 
     def exit_LocalAssign(self, node):
-        if self.isConcatAssign(node):
+        if self.indentAssign(node):
             self._level -= self._options.assignContinuationLineLevel
 
     def enter_Assign(self, node):
-        if self.isConcatAssign(node):
+        if self.indentAssign(node):
             logging.debug('Assign is a concat assign: ' + node.edit().toSource())
             self._level += self._options.assignContinuationLineLevel
 
@@ -61,7 +68,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                 line.indent(self.currentIndent())
 
     def exit_Assign(self, node):
-        if self.isConcatAssign(node):
+        if self.indentAssign(node):
             self._level -= self._options.assignContinuationLineLevel
 
 
