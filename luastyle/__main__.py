@@ -66,6 +66,8 @@ def main():
     parser.add_option('-d', '--debug', action='store_true',  dest='debug', help='enable debugging messages', default=False)
     parser.add_option('-s', '--simu', action='store_true', dest='simu', help='do not rewrite file (simulation)', default=False)
     parser.add_option('-r', '--recursive', action='store_true',  dest='recursive', help='indent all files in directory', default=False)
+    parser.add_option('-e', '--extensions', action="append", type="string", dest='extensions', metavar='EXT',
+                      help='file extension to keep in recursive mode (can be repeated)', default=[])
     # multi-threading
     parser.add_option('-j', '--jobs', metavar='NUMBER', type="int",  dest='jobs', help='number of parallel jobs in recursive mode', default=4)
     # optional rules
@@ -122,8 +124,9 @@ def main():
     else:
         for root, subdirs, files in os.walk(args[0]):
             for filename in files:
-                filepath = os.path.join(root, filename)
-                filenames.append(filepath)
+                if not options.extensions or filename.endswith(tuple(options.extensions)):
+                    filepath = os.path.join(root, filename)
+                    filenames.append(filepath)
 
     # process files
     FilesProcessor(rules, not options.simu, options.jobs).run(filenames)
