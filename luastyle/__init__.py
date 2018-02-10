@@ -1,1 +1,1 @@
-from luastyle.FormatterRule import FormatterRule
+__version__ = '1.1'
