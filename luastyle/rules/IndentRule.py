@@ -26,8 +26,18 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def currentIndent(self, offset = 0):
         return (self._level + offset) * self._options.indentSize
 
+    def indentLines(self, node, offset=0):
+        for line in node.edit().lines():
+            first = line.first()
+            if first:
+                if first.isFirstOnLine():
+                    line.indent(self.currentIndent(offset))
+
     def enter_Chunk(self, node):
         pass
+
+    def enter_Block(self, node):
+        self.indentLines(node)
 
     def indentAssign(self, node):
         """Check if we need to indent this assignment.
@@ -40,21 +50,6 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         return (node.values and type(node.values[0]) in [
             astnodes.Concat
         ]) or len(node.values) > 1
-
-    def enter_LocalAssign(self, node):
-        if self.indentAssign(node):
-            logging.debug('LocalAssign is a concat assign: ' + node.edit().toSource())
-            self._level += self._options.assignContinuationLineLevel
-
-        editor = node.edit()
-        first = editor.first()
-        for line in editor.lines():
-            if line.lineNumber > first.lineNumber:
-                line.indent(self.currentIndent())
-
-    def exit_LocalAssign(self, node):
-        if self.indentAssign(node):
-            self._level -= self._options.assignContinuationLineLevel
 
     def enter_Assign(self, node):
         if self.indentAssign(node):
@@ -71,39 +66,33 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         if self.indentAssign(node):
             self._level -= self._options.assignContinuationLineLevel
 
-
     def enter_While(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_While(self, node):
         self._level -= 1
 
     def enter_Do(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_Do(self, node):
         self._level -= 1
 
     def enter_Repeat(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_Repeat(self, node):
         self._level -= 1
 
     def enter_Function(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
-        node.args.edit().indent(self.currentIndent(self._options.functionContinuationLineLevel - 1))
+        self.indentLines(node.args, self._options.functionContinuationLineLevel - 1)
 
     def exit_Function(self, node):
         self._level -= 1
 
     def enter_LocalFunction(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
         node.args.edit().indent(self.currentIndent(self._options.functionContinuationLineLevel - 1))
 
     def exit_LocalFunction(self, node):
@@ -111,47 +100,33 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Method(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_Method(self, node):
         self._level -= 1
 
     def enter_AnonymousFunction(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_AnonymousFunction(self, node):
         self._level -= 1
 
     def enter_Forin(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
 
     def exit_Forin(self, node):
         self._level -= 1
 
     def enter_If(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
-
-        # indent orelse body
-        if node.orelse and not isinstance(node.orelse, astnodes.ElseIf):
-            node.orelse.edit().indent(self.currentIndent())
 
     def exit_If(self, node):
         self._level -= 1
 
     def enter_ElseIf(self, node):
-        node.body.edit().indent(self.currentIndent())
-
-        # indent orelse body
-        if node.orelse and not isinstance(node.orelse, astnodes.ElseIf):
-            node.orelse.edit().indent(self.currentIndent())
+        pass
 
     def enter_Fornum(self, node):
         self._level += 1
-        node.body.edit().indent(self.currentIndent())
-
 
     def exit_Fornum(self, node):
         self._level -= 1
@@ -181,7 +156,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Call(self, node):
         if self.isClassicCall(node):
             self._level += 1
-        node.args.edit().indent(self.currentIndent())
+        self.indentLines(node.args)
 
     def exit_Call(self, node):
         if self.isClassicCall(node):
@@ -191,7 +166,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Invoke(self, node):
         if self.isClassicCall(node):
             self._level += 1
-        node.args.edit().indent(self.currentIndent())
+        self.indentLines(node.args)
 
     def exit_Invoke(self, node):
         if self.isClassicCall(node):
@@ -201,7 +176,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Table(self, node):
         self._level += 1
         editor = node.edit()
-        editor.indent(self.currentIndent())
+        self.indentLines(node)
 
         # opening brace
         openingBrace = editor.first()
@@ -210,8 +185,8 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def exit_Table(self, node):
         self._level -= 1
-        editor = node.edit()
-        closingBrace = editor.lastOfType(Tokens.CBRACE)
+
+        closingBrace = node.edit().lastOfType(Tokens.CBRACE)
         if closingBrace.isFirstOnLine():
             closingBrace.line().indent(self.currentIndent())
 
@@ -228,14 +203,6 @@ class IndentRule(FormatterRule):
         self._options = options
 
     def apply(self, input):
-        # strip
-        output = []
-        for line in input.splitlines():
-            output.append(line.strip())
-        input = '\n'.join(map(str, output)) + '\n'
-
-        tree = None
-
         # try to get AST tree, do nothing if invalid source code is provided
         try:
             tree = ast.parse(input)

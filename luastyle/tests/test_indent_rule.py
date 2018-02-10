@@ -75,3 +75,6 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_space_comma(self):
         self.setupTest('space_comma')
+
+    def test_literal(self):
+        self.setupTest('literal')
