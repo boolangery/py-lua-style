@@ -46,3 +46,7 @@ function BehaviorEngine:init(protocolDirectory, behaviorDatabase)
   )
 
 end
+
+local function add(a, b)
+  return a + b
+end

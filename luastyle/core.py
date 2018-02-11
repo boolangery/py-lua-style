@@ -4,14 +4,15 @@ import os
 import logging
 import time
 import configparser
-import luastyle.rules
 import concurrent.futures
+from luastyle import indent
+from luastyle.indent import IndentRule
 
 class ConfigurationReader():
     FILENAME = 'luastyle.conf'
 
     def writeDefault(self):
-        indentDefaultOption = luastyle.rules.IndentOptions()
+        indentDefaultOption = indent.IndentOptions()
         config = configparser.ConfigParser()
 
         config['INDENTATION'] = {
@@ -34,20 +35,18 @@ class ConfigurationReader():
         #         pass
 
 class FilesProcessor():
-    def __init__(self, rules, rewrite, jobs):
-        self._rules = rules
+    def __init__(self, rewrite, jobs, indentOptions):
         self._rewrite = rewrite
         self._jobs = jobs
+        self._indentOptions = indentOptions
 
     def _processOne(self, filepath):
         """Process one file.
         """
         with open(filepath) as file:
             rule_input = file.read()
-        rule_output = rule_input
-        for rule in self._rules:
-            logging.debug('Applying ' + rule.__class__.__name__)
-            rule_output = rule.apply(rule_output)
+
+        rule_output = IndentRule(self._indentOptions).apply(rule_input)
 
         if self._rewrite:
             f = open(filepath, 'r+')

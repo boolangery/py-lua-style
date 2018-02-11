@@ -1,10 +1,15 @@
-from luastyle import FormatterRule
 import logging
-from luaparser import asttokens
-from luaparser import astnodes
-from luaparser import ast
+from luaparser import ast, astnodes
 from luaparser.asttokens import Tokens
 from enum import Enum
+
+class FormatterRule:
+    def __init__(self):
+        self._output = ''
+    def apply(self, input):
+        return input
+    def revert(self, input):
+        return input
 
 class IndentType(Enum):
     SPACE = 1
@@ -93,7 +98,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_LocalFunction(self, node):
         self._level += 1
-        node.args.edit().indent(self.currentIndent(self._options.functionContinuationLineLevel - 1))
+        self.indentLines(node.args, self._options.functionContinuationLineLevel - 1)
 
     def exit_LocalFunction(self, node):
         self._level -= 1

@@ -1,11 +1,11 @@
 import unittest
-from luastyle import rules
+from luastyle import indent
 import logging
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 class IndentRuleTestCase(unittest.TestCase):
-    def setupTest(self, filePrefix, options=rules.IndentOptions()):
+    def setupTest(self, filePrefix, options=indent.IndentOptions()):
         options.checkSpaceAfterComma = True
 
         self.maxDiff = None
@@ -14,7 +14,7 @@ class IndentRuleTestCase(unittest.TestCase):
             raw = content_file.read()
         with open('./test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
             exp = content_file.read()
-        formatted = rules.IndentRule(options).apply(raw)
+        formatted = indent.IndentRule(options).apply(raw)
         print(formatted)
         self.assertEqual(formatted, exp)
 

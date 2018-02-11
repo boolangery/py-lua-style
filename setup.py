@@ -10,7 +10,7 @@ setup(
     author='Eliott Dumeix',
     author_email='eliott.dumeix@gmail.com',
     license='MIT',
-    packages=['luastyle', 'luastyle.rules', 'luastyle.tests'],
+    packages=['luastyle', 'luastyle.tests'],
     zip_safe=False,
     classifiers=[
         'Programming Language :: Python :: 3',
