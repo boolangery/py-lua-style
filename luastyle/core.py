@@ -54,6 +54,8 @@ class FilesProcessor():
             f.write(rule_output)
             f.truncate()
             f.close()
+        else:
+            print(rule_output)
 
         return len(rule_output.split('\n'))
 

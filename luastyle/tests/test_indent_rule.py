@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 class IndentRuleTestCase(unittest.TestCase):
     def setupTest(self, filePrefix, options=indent.IndentOptions()):
-        options.checkSpaceAfterComma = True
+        options.comma_check = True
 
         self.maxDiff = None
         raw, exp = '', ''

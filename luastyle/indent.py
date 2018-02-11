@@ -11,32 +11,45 @@ class FormatterRule:
     def revert(self, input):
         return input
 
-class IndentType(Enum):
-    SPACE = 1
 
 class IndentOptions():
     def __init__(self):
-        self.indentType = IndentType.SPACE
-        self.indentSize = 2
-        self.assignContinuationLineLevel = 1
-        self.functionContinuationLineLevel = 2
+        self.indent_size = 2
+        self.indent_char = ' '
+        self.indent_with_tabs = False
+        self.initial_indent_level = 0
 
-        self.checkSpaceAfterComma = False
+        self.assign_cont_line_level = 1
+        self.func_cont_line_level = 2
+        self.comma_check = False
+
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
     def __init__(self, options):
         self._options = options
         self._level = 0
 
-    def currentIndent(self, offset = 0):
-        return (self._level + offset) * self._options.indentSize
+    def currentIndent(self, offset=0):
+        if not self._options.indent_with_tabs:
+            return (self._level + offset + self._options.initial_indent_level) * self._options.indent_size
+        else:
+            return self._level + offset + self._options.initial_indent_level
+
+    def indentLine(self, line, offset=0):
+        if not self._options.indent_with_tabs:
+            line.indent(self.currentIndent(offset), self._options.indent_char)
+        else:
+            line.indent(self.currentIndent(offset), '\t')
 
     def indentLines(self, node, offset=0):
         for line in node.edit().lines():
             first = line.first()
             if first:
                 if first.isFirstOnLine():
-                    line.indent(self.currentIndent(offset))
+                    if not self._options.indent_with_tabs:
+                        line.indent(self.currentIndent(offset), self._options.indent_char)
+                    else:
+                        line.indent(self.currentIndent(offset), '\t')
 
     def enter_Chunk(self, node):
         pass
@@ -59,17 +72,17 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
     def enter_Assign(self, node):
         if self.indentAssign(node):
             logging.debug('Assign is a concat assign: ' + node.edit().toSource())
-            self._level += self._options.assignContinuationLineLevel
+            self._level += self._options.assign_cont_line_level
 
         editor = node.edit()
         first = editor.first()
         for line in editor.lines():
             if line.lineNumber > first.lineNumber:
-                line.indent(self.currentIndent())
+                self.indentLine(line)
 
     def exit_Assign(self, node):
         if self.indentAssign(node):
-            self._level -= self._options.assignContinuationLineLevel
+            self._level -= self._options.assign_cont_line_level
 
     def enter_While(self, node):
         self._level += 1
@@ -91,14 +104,14 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_Function(self, node):
         self._level += 1
-        self.indentLines(node.args, self._options.functionContinuationLineLevel - 1)
+        self.indentLines(node.args, self._options.func_cont_line_level - 1)
 
     def exit_Function(self, node):
         self._level -= 1
 
     def enter_LocalFunction(self, node):
         self._level += 1
-        self.indentLines(node.args, self._options.functionContinuationLineLevel - 1)
+        self.indentLines(node.args, self._options.func_cont_line_level - 1)
 
     def exit_LocalFunction(self, node):
         self._level -= 1
@@ -156,7 +169,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
             prev = closingParen.prev()
             if prev and prev.type in [Tokens.CBRACE.value, Tokens.END.value]:
                 if prev.isFirstOnLine():
-                    closingParen.line().indent(self.currentIndent())
+                    self.indentLine(closingParen.line())
 
     def enter_Call(self, node):
         if self.isClassicCall(node):
@@ -186,14 +199,14 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         # opening brace
         openingBrace = editor.first()
         if openingBrace.isFirstOnLine():
-            openingBrace.line().indent(self.currentIndent(-1))
+            self.indentLine(openingBrace.line(), -1)
 
     def exit_Table(self, node):
         self._level -= 1
 
         closingBrace = node.edit().lastOfType(Tokens.CBRACE)
         if closingBrace.isFirstOnLine():
-            closingBrace.line().indent(self.currentIndent())
+            self.indentLine(closingBrace.line())
 
 CHECK_SPACE_AFTER_COMMA_IF_NOT_IN = [
     Tokens.NEWLINE.value
@@ -219,7 +232,7 @@ class IndentRule(FormatterRule):
         IndentVisitor(self._options).visit(tree)
 
         # check SPACE after comma
-        if self._options.checkSpaceAfterComma:
+        if self._options.comma_check:
             for t in tree.edit():
                 if t.type == Tokens.COMMA.value:
                     next = t.next([])  # no ignore
