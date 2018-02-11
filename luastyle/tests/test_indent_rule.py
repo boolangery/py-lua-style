@@ -78,3 +78,8 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_literal(self):
         self.setupTest('literal')
+
+    def test_return(self):
+        options = indent.IndentOptions()
+        options.indent_return_cont = True
+        self.setupTest('return', options)

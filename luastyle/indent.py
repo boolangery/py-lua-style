@@ -22,7 +22,7 @@ class IndentOptions():
         self.assign_cont_line_level = 1
         self.func_cont_line_level = 2
         self.comma_check = False
-
+        self.indent_return_cont = False
 
 class IndentVisitor(ast.ASTRecursiveVisitor):
     def __init__(self, options):
@@ -207,6 +207,15 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
         closingBrace = node.edit().lastOfType(Tokens.CBRACE)
         if closingBrace.isFirstOnLine():
             self.indentLine(closingBrace.line())
+
+    def enter_Return(self, node):
+        if self._options.indent_return_cont:
+            self._level += 1
+            self.indentLines(node.values)
+
+    def exit_Return(self, node):
+        if self._options.indent_return_cont:
+            self._level -= 1
 
 CHECK_SPACE_AFTER_COMMA_IF_NOT_IN = [
     Tokens.NEWLINE.value

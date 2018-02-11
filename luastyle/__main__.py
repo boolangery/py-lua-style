@@ -78,6 +78,11 @@ def main():
                            dest='comma_check',
                            help='check spaces after comma',
                            default=default.comma_check)
+    style_group.add_option('-R', '--indent-return',
+                           action='store_true',
+                           dest='indent_return_cont',
+                           help='indent return continuation lines on next level',
+                           default=default.comma_check)
     parser.add_option_group(style_group)
 
     (options, args) = parser.parse_args()
@@ -102,7 +107,7 @@ def main():
     indentOptions.assign_cont_line_level = options.assign_cont_level
     indentOptions.func_cont_line_level = options.func_cont_level
     indentOptions.comma_check = options.comma_check
-
+    indentOptions.indent_return_cont = options.indent_return_cont
     # build a filename list
     filenames = []
     if not os.path.isdir(args[0]):
