@@ -1,52 +1,22 @@
-#!/usr/bin/env python3
 import sys
-import os
-import logging
 import time
-import configparser
 import concurrent.futures
-from luastyle import indent
 from luastyle.indent import IndentRule
 
-class ConfigurationReader():
-    FILENAME = 'luastyle.conf'
 
-    def writeDefault(self):
-        indentDefaultOption = indent.IndentOptions()
-        config = configparser.ConfigParser()
-
-        config['INDENTATION'] = {
-            'IndentType': self.indentType.value,
-            'IndentSize': self.indentSize,
-            'AssignementContinuationLineLevel': self.assignContinuationLineLevel,
-            'FunctionContinuationLineLevel': self.functionContinuationLineLevel,
-        }
-
-        filepath = os.path.join(os.path.expanduser("~"), FILENAME)
-        with open(filepath, 'w') as configfile:
-            config.write(configfile)
-
-        # config = None
-        # for loc in os.curdir, os.path.expanduser("~"), "/etc/luastyle", os.environ.get("LUASTYLE_CONF"):
-        #     try:
-        #         with open(os.path.join(loc, "myproject.conf")) as source:
-        #             config.readfp(source)
-        #     except IOError:
-        #         pass
-
-class FilesProcessor():
-    def __init__(self, rewrite, jobs, indentOptions):
+class FilesProcessor:
+    def __init__(self, rewrite, jobs, indent_options):
         self._rewrite = rewrite
         self._jobs = jobs
-        self._indentOptions = indentOptions
+        self._indent_options = indent_options
 
-    def _processOne(self, filepath):
+    def _process_one(self, filepath):
         """Process one file.
         """
         with open(filepath) as file:
             rule_input = file.read()
 
-        rule_output = IndentRule(self._indentOptions).apply(rule_input)
+        rule_output = IndentRule(self._indent_options).apply(rule_input)
 
         if self._rewrite:
             f = open(filepath, 'r+')
@@ -72,7 +42,7 @@ class FilesProcessor():
         # We can use a with statement to ensure threads are cleaned up promptly
         with concurrent.futures.ThreadPoolExecutor(max_workers=self._jobs) as executor:
             # Start process operations and mark each future with its filename
-            future_to_file = {executor.submit(self._processOne, file): file for file in files}
+            future_to_file = {executor.submit(self._process_one, file): file for file in files}
             for future in concurrent.futures.as_completed(future_to_file):
                 file = future_to_file[future]
                 try:

@@ -7,9 +7,11 @@ import luastyle
 from luastyle.core import FilesProcessor
 from luastyle.indent import IndentOptions
 
+
 def abort(msg):
     logging.error(msg)
     sys.exit()
+
 
 def main():
     # parse options:
@@ -98,16 +100,17 @@ def main():
         logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     # IndentRule options:
-    indentOptions = IndentOptions()
-    indentOptions.indent_size = options.indent_size
-    indentOptions.indent_char = options.indent_char
-    indentOptions.indent_with_tabs = options.indent_with_tabs
-    indentOptions.initial_indent_level = options.initial_indent_level
+    indent_options = IndentOptions()
+    indent_options.indent_size = options.indent_size
+    indent_options.indent_char = options.indent_char
+    indent_options.indent_with_tabs = options.indent_with_tabs
+    indent_options.initial_indent_level = options.initial_indent_level
 
-    indentOptions.assign_cont_line_level = options.assign_cont_level
-    indentOptions.func_cont_line_level = options.func_cont_level
-    indentOptions.comma_check = options.comma_check
-    indentOptions.indent_return_cont = options.indent_return_cont
+    indent_options.assign_cont_line_level = options.assign_cont_level
+    indent_options.func_cont_line_level = options.func_cont_level
+    indent_options.comma_check = options.comma_check
+    indent_options.indent_return_cont = options.indent_return_cont
+
     # build a filename list
     filenames = []
     if not os.path.isdir(args[0]):
@@ -120,7 +123,8 @@ def main():
                     filenames.append(filepath)
 
     # process files
-    FilesProcessor(options.replace, options.jobs, indentOptions).run(filenames)
+    FilesProcessor(options.replace, options.jobs, indent_options).run(filenames)
+
 
 if __name__ == '__main__':
     main()
