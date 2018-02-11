@@ -41,7 +41,7 @@ Usage: luastyle [options] filename
       -t, --indent-with-tabs      Indent with tabs, overrides -s and -c
       -l N, --indent-level=N      Initial indentation level [0]
       -A N, --assign-cont-level=N Continuation lines level in assignment [1]
-      -F N, --func-cont-level=N   Continuation lines level in function arguments
+      -F N, --func-cont-level=N   Continuation lines level in function arguments [2]
       -C, --comma-check           Check spaces after comma
       -R, --indent-return         Indent return continuation lines on next level
 
@@ -53,3 +53,66 @@ In addition to CLI arguments, you may pass a config file via:
 
 - the LUASTYLE_CONF environment variables pointing to a config file
 - a .luastylerc file located in your user directory
+
+
+Options examples
+------------------------------------------------------------------------------
+
+Continuation lines level in assignment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block::
+
+    -A N, --assign-cont-level=N Continuation lines level in assignment [1]
+
+With:
+
+.. code-block:: lua
+
+    local errorMessage = 'The process number ' .. tostring(process) ..
+      ' generated an exception while processing raw data: ' ..
+      processor:getRawData()
+
+
+.. code-block:: lua
+
+    -- luastyle -c "." -A 0 source.lua
+
+    local errorMessage = 'The process number ' .. tostring(process) ..
+    ' generated an exception while processing raw data: ' ..
+    processor:getRawData()
+
+.. code-block:: lua
+
+    -- luastyle -c "." -A 2 source.lua
+
+    local errorMessage = 'The process number ' .. tostring(process) ..
+    ....' generated an exception while processing raw data: ' ..
+    ....processor:getRawData()
+
+
+Continuation lines level in function arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block::
+
+    -F N, --func-cont-level=N   Continuation lines level in function arguments [2]
+
+With:
+
+.. code-block:: lua
+
+    local function process(param_1, param_2, param_3,
+      param_4, param_5, param_6)
+      return do_something()
+    end
+
+
+.. code-block:: lua
+
+    -- luastyle -c "." -F 2 source.lua (default value)
+
+    local function process(param_1, param_2, param_3,
+    ....param_4, param_5, param_6)
+    ..return do_something()
+    end
