@@ -1,7 +1,27 @@
+import os
 import sys
 import time
+import json
 import concurrent.futures
-from luastyle.indent import IndentRule
+from luastyle.indent import IndentRule, IndentOptions
+
+
+class Configuration:
+    def load(self, filepath):
+        with open(filepath) as json_data_file:
+            data = json.load(json_data_file)
+        options = IndentOptions()
+        options.__dict__ = data
+        return options
+
+    def generate_default(self, filepath):
+        with open(filepath, 'w') as json_data_file:
+            json_data_file.write(
+                json.dumps(IndentOptions().__dict__,
+                           sort_keys=True,
+                           indent=4,
+                           separators=(',', ': ')))
+        print('Config. file generated in: ' + os.path.abspath(filepath))
 
 
 class FilesProcessor:

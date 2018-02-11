@@ -4,12 +4,12 @@ import os
 import logging
 from optparse import OptionParser, OptionGroup
 import luastyle
-from luastyle.core import FilesProcessor
+from luastyle.core import FilesProcessor, Configuration
 from luastyle.indent import IndentOptions
 
 
 def abort(msg):
-    logging.error(msg)
+    sys.stderr.write(msg + '\n')
     sys.exit()
 
 
@@ -23,9 +23,18 @@ def main():
                          dest='replace',
                          help='write output in-place, replacing input',
                          default=False)
+    cli_group.add_option('--config',
+                         metavar='F', type='string',
+                         dest='config_file',
+                         help='path to config file')
+    cli_group.add_option('--config-generate',
+                         action='store_true',
+                         dest='config_generate',
+                         help='generate a default config file',
+                         default=False)
     cli_group.add_option('--type',
                          action="append",
-                         type="string",
+                         type='string',
                          dest='extensions',
                          metavar='EXT',
                          help='file extension to indent (can be repeated) [lua]',
@@ -46,12 +55,12 @@ def main():
     default = IndentOptions()
     style_group = OptionGroup(parser, "Beautifier Options")
     style_group.add_option('-s', '--indent-size',
-                           metavar='N', type="int",
+                           metavar='N', type='int',
                            dest='indent_size',
                            help='indentation size [2]',
                            default=2)
     style_group.add_option('-c', '--indent-char',
-                           metavar='S', type="string",
+                           metavar='S', type='string',
                            dest='indent_char',
                            help='indentation character [" "]',
                            default=' ')
@@ -61,17 +70,17 @@ def main():
                            help='indent with tabs, overrides -s and -c',
                            default=False)
     style_group.add_option('-l', '--indent-level',
-                           metavar='N', type="int",
+                           metavar='N', type='int',
                            dest='initial_indent_level',
                            help='initial indentation level [0]',
                            default=0)
     style_group.add_option('-A', '--assign-cont-level',
-                           metavar='N', type="int",
+                           metavar='N', type='int',
                            dest='assign_cont_level',
                            help='continuation lines level in assignment [' + str(default.assign_cont_line_level) + ']',
                            default=default.assign_cont_line_level)
     style_group.add_option('-F', '--func-cont-level',
-                           metavar='N', type="int",
+                           metavar='N', type='int',
                            dest='func_cont_level',
                            help='continuation lines level in function arguments',
                            default=default.func_cont_line_level)
@@ -89,6 +98,11 @@ def main():
 
     (options, args) = parser.parse_args()
 
+    # generate config
+    if options.config_generate:
+        Configuration().generate_default('./luastyle.json')
+        sys.exit()
+
     # check argument:
     if not len(args) > 0:
         abort('Expected a filepath or a directory path')
@@ -99,17 +113,41 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-    # IndentRule options:
-    indent_options = IndentOptions()
-    indent_options.indent_size = options.indent_size
-    indent_options.indent_char = options.indent_char
-    indent_options.indent_with_tabs = options.indent_with_tabs
-    indent_options.initial_indent_level = options.initial_indent_level
+    # Configuration from file or cli
+    indent_options = None
+    # Try to load a config file from default location
+    default_filepath = [os.path.join(os.path.expanduser('~'), '.luastylerc')]
+    env_var = os.environ.get('LUASTYLE_CONF')
+    if env_var is not None:
+        default_filepath.append(env_var)
+    for filepath in default_filepath:
+        if os.path.exists(filepath):  # try to load existing file
+            try:
+                indent_options = Configuration().load(filepath)
+                print('Configuration successfully loaded from ' + filepath)
+                break
+            except Exception as e:
+                abort('Error while reading ' + filepath + ': ' + str(e))
+    # then if no file found in default location
+    if indent_options is not None and options.config_file:
+        if os.path.exists(options.config_file):
+            try:
+                indent_options = Configuration().load(options.config_file)
+            except Exception as e:
+                abort('Error while reading ' + options.config_file + ': ' + str(e))
+        else:
+            abort('Config file doesn''t exist: ' + options.config_file)
+    else:
+        indent_options = IndentOptions()
+        indent_options.indent_size = options.indent_size
+        indent_options.indent_char = options.indent_char
+        indent_options.indent_with_tabs = options.indent_with_tabs
+        indent_options.initial_indent_level = options.initial_indent_level
 
-    indent_options.assign_cont_line_level = options.assign_cont_level
-    indent_options.func_cont_line_level = options.func_cont_level
-    indent_options.comma_check = options.comma_check
-    indent_options.indent_return_cont = options.indent_return_cont
+        indent_options.assign_cont_line_level = options.assign_cont_level
+        indent_options.func_cont_line_level = options.func_cont_level
+        indent_options.comma_check = options.comma_check
+        indent_options.indent_return_cont = options.indent_return_cont
 
     # build a filename list
     filenames = []
