@@ -8,3 +8,13 @@ function foo(a, b, c, d,
   print('hello')
   -- done
 end
+
+local function foo(a, b, c, d,
+    e, f, g, h)
+  print('hello')
+end
+
+local a = function (a, b, c, d,
+    e, f, g, h)
+  print('hello')
+end

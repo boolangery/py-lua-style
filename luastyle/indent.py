@@ -127,6 +127,7 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
 
     def enter_AnonymousFunction(self, node):
         self._level += 1
+        self.indent_lines(node.args, self._options.func_cont_line_level - 1)
 
     def exit_AnonymousFunction(self, node):
         self._level -= 1

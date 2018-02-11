@@ -77,12 +77,14 @@ def main():
     style_group.add_option('-A', '--assign-cont-level',
                            metavar='N', type='int',
                            dest='assign_cont_level',
-                           help='continuation lines level in assignment [' + str(default.assign_cont_line_level) + ']',
+                           help='continuation lines level in assignment [' +
+                                str(default.assign_cont_line_level) + ']',
                            default=default.assign_cont_line_level)
     style_group.add_option('-F', '--func-cont-level',
                            metavar='N', type='int',
                            dest='func_cont_level',
-                           help='continuation lines level in function arguments',
+                           help='continuation lines level in function arguments [' +
+                                str(default.func_cont_line_level) + ']',
                            default=default.func_cont_line_level)
     style_group.add_option('-C', '--comma-check',
                            action='store_true',
