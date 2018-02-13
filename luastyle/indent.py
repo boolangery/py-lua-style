@@ -160,6 +160,8 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
             prev = first.prev()
             if prev:
                 return prev.type == Tokens.OPAR.value
+        else:
+            return True  # no args and no '{}' or '""'
         return False
 
     def callIndentLast(self, node, type):
