@@ -27,10 +27,44 @@ class IndentOptions:
         self.indent_return_cont = False
 
 
-class IndentVisitor(ast.ASTRecursiveVisitor):
+class IndentVisitor:
     def __init__(self, options):
         self._options = options
         self._level = 0
+
+    def inc_level(self, n=1):
+        self._level += n
+
+    def dec_level(self, n=1):
+        self._level -= n
+
+    def inc_level_if(self, condition, n=1):
+        if condition:
+            self._level += n
+
+    def dec_level_if(self, condition, n=1):
+        if condition:
+            self._level -= n
+
+    def visit(self, node):
+        if node is None: return
+        if isinstance(node, astnodes.Node):
+            # call enter node method
+            # if no visitor method found for this arg type,
+            # search in parent arg type:
+            parentType = node.__class__
+            while parentType != object:
+                name = 'visit_' + parentType.__name__
+                visitor = getattr(self, name, None)
+                if visitor:
+                    visitor(node)
+                    break
+                else:
+                    parentType = parentType.__bases__[0]
+
+        elif isinstance(node, list):
+            for n in node:
+                self.visit(n)
 
     def get_current_indent(self, offset=0):
         if not self._options.indent_with_tabs:
@@ -54,13 +88,23 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
                     else:
                         line.indent(self.get_current_indent(offset), '\t')
 
-    def enter_Chunk(self, node):
-        pass
+    def visit_Chunk(self, node):
+        self.visit(node.body)
 
-    def enter_Block(self, node):
+    # ####################################################################### #
+    # Root Nodes                                                              #
+    # ####################################################################### #
+    def visit_Block(self, node):
+        self.indent_lines(node)  # useful to indent comments in first level
+        self.visit(node.body)
+
+    def visit_Node(self, node):
         self.indent_lines(node)
 
-    def indentAssign(self, node):
+    # ####################################################################### #
+    # Assignments                                                             #
+    # ####################################################################### #
+    def indent_assign(self, node):
         """Check if we need to indent this assignment.
 
         Rules to indent are:
@@ -72,156 +116,162 @@ class IndentVisitor(ast.ASTRecursiveVisitor):
             astnodes.Concat
         ]) or len(node.values) > 1
 
-    def enter_Assign(self, node):
-        if self.indentAssign(node):
-            logging.debug('Assign is a concat assign: ' + node.edit().toSource())
-            self._level += self._options.assign_cont_line_level
+    def visit_Assign(self, node):
+        self.visit(node.targets)
+        indent_cont = self.indent_assign(node)
+        self.inc_level_if(indent_cont, self._options.assign_cont_line_level)
+        self.visit(node.values)
+        self.dec_level_if(indent_cont, self._options.assign_cont_line_level)
 
-        editor = node.edit()
-        first = editor.first()
-        for line in editor.lines():
-            if line.lineNumber > first.lineNumber:
-                self.indent_line(line)
+    # ####################################################################### #
+    # Control Structures                                                      #
+    # ####################################################################### #
+    def visit_While(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_Assign(self, node):
-        if self.indentAssign(node):
-            self._level -= self._options.assign_cont_line_level
+    def visit_Do(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def enter_While(self, node):
-        self._level += 1
+    def visit_Repeat(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_While(self, node):
-        self._level -= 1
+    def visit_Forin(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def enter_Do(self, node):
-        self._level += 1
+    def visit_Fornum(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_Do(self, node):
-        self._level -= 1
+    def visit_If(self, node):
+        self.inc_level()
+        self.visit(node.body)
+        self.visit(node.orelse)
+        self.dec_level()
 
-    def enter_Repeat(self, node):
-        self._level += 1
+    def visit_ElseIf(self, node):
+        self.visit(node.body)
+        self.visit(node.orelse)
 
-    def exit_Repeat(self, node):
-        self._level -= 1
+    # ####################################################################### #
+    # Call / Invoke / Method / Anonymous                                      #
+    # ####################################################################### #
+    def visit_Function(self, node):
+        self.indent_lines(node)  # handle comments
+        self.inc_level(self._options.func_cont_line_level)
+        self.visit(node.args)
+        self.dec_level(self._options.func_cont_line_level)
 
-    def enter_Function(self, node):
-        self._level += 1
-        self.indent_lines(node.args, self._options.func_cont_line_level - 1)
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_Function(self, node):
-        self._level -= 1
+    def visit_LocalFunction(self, node):
+        self.indent_lines(node)  # handle comments
+        self.inc_level(self._options.func_cont_line_level)
+        self.visit(node.args)
+        self.dec_level(self._options.func_cont_line_level)
 
-    def enter_LocalFunction(self, node):
-        self._level += 1
-        self.indent_lines(node.args, self._options.func_cont_line_level - 1)
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_LocalFunction(self, node):
-        self._level -= 1
+    def visit_Method(self, node):
+        self.indent_lines(node)  # handle comments
+        self.inc_level(self._options.func_cont_line_level)
+        self.visit(node.args)
+        self.dec_level(self._options.func_cont_line_level)
 
-    def enter_Method(self, node):
-        self._level += 1
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
 
-    def exit_Method(self, node):
-        self._level -= 1
+    def visit_AnonymousFunction(self, node):
+        self.indent_lines(node)  # handle comments
+        self.inc_level(self._options.func_cont_line_level)
+        self.visit(node.args)
+        self.dec_level(self._options.func_cont_line_level)
 
-    def enter_AnonymousFunction(self, node):
-        self._level += 1
-        self.indent_lines(node.args, self._options.func_cont_line_level - 1)
+        self.inc_level()
+        self.visit(node.body)
+        self.dec_level()
+        self.indent_last_if_first(node, Tokens.END)
 
-    def exit_AnonymousFunction(self, node):
-        self._level -= 1
-
-    def enter_Forin(self, node):
-        self._level += 1
-
-    def exit_Forin(self, node):
-        self._level -= 1
-
-    def enter_If(self, node):
-        self._level += 1
-
-    def exit_If(self, node):
-        self._level -= 1
-
-    def enter_ElseIf(self, node):
-        pass
-
-    def enter_Fornum(self, node):
-        self._level += 1
-
-    def exit_Fornum(self, node):
-        self._level -= 1
-
-    def isClassicCall(self, node):
+    def is_call_with_opar(self, node):
         """Return true is its a call with parenthesis."""
         first = node.args.edit().first()
         if first:
             prev = first.prev()
             if prev:
                 return prev.type == Tokens.OPAR.value
-        else:
-            return True  # no args and no '{}' or '""'
         return False
 
-    def callIndentLast(self, node, type):
+    def indent_last_if_first(self, node, type):
         # the rule for indenting the last line containing CPAR:
         # indent on same level as call opening OPAR if
         # the CPAR is the first token on line or if previous token
         # is a [CBRACE, END]
         editor = node.edit()
-        closingParen = editor.lastOfType(type)
-        if closingParen:
-            prev = closingParen.prev()
+        lasttok = editor.lastOfType(type)
+
+        if lasttok:
+            prev = lasttok.prev()
             if prev and prev.type in [Tokens.CBRACE.value, Tokens.END.value]:
                 if prev.isFirstOnLine():
-                    self.indent_line(closingParen.line())
+                    self.indent_line(lasttok.line())
+            elif lasttok.isFirstOnLine():
+                self.indent_line(lasttok.line())
 
-    def enter_Call(self, node):
-        if self.isClassicCall(node):
-            self._level += 1
-        self.indent_lines(node.args)
+    def visit_Call(self, node):
+        has_parenthesis = self.is_call_with_opar(node)
 
-    def exit_Call(self, node):
-        if self.isClassicCall(node):
-            self._level -= 1
-        self.callIndentLast(node, Tokens.CPAR)
+        self.visit(node.func)
+        self.inc_level_if(has_parenthesis)
+        self.visit(node.args)
+        self.dec_level_if(has_parenthesis)
+        if has_parenthesis:
+            self.indent_last_if_first(node, Tokens.CPAR)
 
-    def enter_Invoke(self, node):
-        if self.isClassicCall(node):
-            self._level += 1
-        self.indent_lines(node.args)
+    def visit_Invoke(self, node):
+        has_parenthesis = self.is_call_with_opar(node)
+        self.visit(node.func)
+        self.inc_level_if(has_parenthesis)
+        self.visit(node.args)
+        self.dec_level_if(has_parenthesis)
+        if has_parenthesis:
+            self.indent_last_if_first(node, Tokens.CPAR)
 
-    def exit_Invoke(self, node):
-        if self.isClassicCall(node):
-            self._level -= 1
-        self.callIndentLast(node, Tokens.CPAR)
-
-    def enter_Table(self, node):
-        self._level += 1
+    # ####################################################################### #
+    # Types and Values                                                        #
+    # ####################################################################### #
+    def visit_Table(self, node):
         editor = node.edit()
-        self.indent_lines(node)
+        o_brace = editor.firstOfType(Tokens.OBRACE)
+        if o_brace.isFirstOnLine():
+            self.indent_line(o_brace.line())
+        self.inc_level()
+        self.visit(node.keys)
+        self.visit(node.values)
+        self.dec_level()
+        c_brace = editor.lastOfType(Tokens.CBRACE)
+        if c_brace.isFirstOnLine():
+            self.indent_line(c_brace.line())
 
-        # opening brace
-        openingBrace = editor.first()
-        if openingBrace.isFirstOnLine():
-            self.indent_line(openingBrace.line(), -1)
-
-    def exit_Table(self, node):
-        self._level -= 1
-
-        closingBrace = node.edit().lastOfType(Tokens.CBRACE)
-        if closingBrace.isFirstOnLine():
-            self.indent_line(closingBrace.line())
-
-    def enter_Return(self, node):
+    def visit_Return(self, node):
         if self._options.indent_return_cont:
-            self._level += 1
+            self.inc_level()
             self.indent_lines(node.values)
+            self.visit(node.values)
+            self.dec_level()
 
-    def exit_Return(self, node):
-        if self._options.indent_return_cont:
-            self._level -= 1
 
 CHECK_SPACE_AFTER_COMMA_IF_NOT_IN = [
     Tokens.NEWLINE.value
