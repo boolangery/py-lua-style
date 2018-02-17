@@ -1,7 +1,7 @@
 import logging
 from luaparser import ast, astnodes
 from luaparser.asttokens import Tokens
-
+from enum import Enum
 
 class FormatterRule:
     def __init__(self):
@@ -27,10 +27,36 @@ class IndentOptions:
         self.indent_return_cont = False
 
 
+IGNORE = [Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG, Tokens.LINE_COMMENT, Tokens.COMMENT]
+
+
+class Modes(Enum):
+    NESTED = 1
+
+
 class IndentVisitor:
     def __init__(self, options):
         self._options = options
         self._level = 0
+        self._is_nested = False
+        # _modes contains a dictionary of flags associated to
+        # a counter. The counter is incremented on flag enter, and
+        # decreased on flag leave
+        self._modes = {}
+
+    def enter_mode(self, mode):
+        if mode in self._modes:
+            self._modes[mode] += 1
+        else:
+            self._modes[mode] = 1
+        return self._modes[mode] == 1  # return True if entered for first time
+
+    def leave_mode(self, mode):
+        self._modes[mode] -= 1
+        return self._modes[mode] == 0  # return True if leaving mode
+
+    def get_modes(self):
+        return [mode for mode in self._modes.keys() if self._modes[mode] > 0]
 
     def inc_level(self, n=1):
         self._level += n
@@ -230,24 +256,58 @@ class IndentVisitor:
             elif lasttok.isFirstOnLine():
                 self.indent_line(lasttok.line())
 
+    def visit_Index(self, node):
+        self.visit(node.value)
+        self.visit(node.idx)
+
     def visit_Call(self, node):
         has_parenthesis = self.is_call_with_opar(node)
 
+        editor = node.func.edit()
+        is_splitted = editor.first(IGNORE).lineNumber < editor.last(IGNORE).lineNumber
+
         self.visit(node.func)
+
+        if is_splitted:
+            self.inc_level_if(self.enter_mode(Modes.NESTED))
+            self.indent_line(editor.last(IGNORE).line())
+
         self.inc_level_if(has_parenthesis)
         self.visit(node.args)
         self.dec_level_if(has_parenthesis)
+
+        if is_splitted:
+            self.dec_level_if(self.leave_mode(Modes.NESTED))
         if has_parenthesis:
             self.indent_last_if_first(node, Tokens.CPAR)
 
     def visit_Invoke(self, node):
         has_parenthesis = self.is_call_with_opar(node)
+        func_token = node.func.edit().first(IGNORE)
+        source_token = node.source.edit().first(IGNORE)
+        is_splitted = func_token.lineNumber > source_token.lineNumber
+
+        self.visit(node.source)
         self.visit(node.func)
+
+        self.inc_level_if(is_splitted)
+        self.visit(node.func)
+        self.indent_line(node.func.edit().first().line())
         self.inc_level_if(has_parenthesis)
         self.visit(node.args)
         self.dec_level_if(has_parenthesis)
+
         if has_parenthesis:
             self.indent_last_if_first(node, Tokens.CPAR)
+
+        self.dec_level_if(is_splitted)
+
+    # ####################################################################### #
+    # Operators                                                               #
+    # ####################################################################### #
+    def visit_BinaryOp(self, node):
+        self.visit(node.left)
+        self.visit(node.right)
 
     # ####################################################################### #
     # Types and Values                                                        #
