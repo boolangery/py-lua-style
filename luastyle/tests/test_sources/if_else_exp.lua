@@ -3,9 +3,9 @@ if op == "+" then
 elseif op == "-" then
   r = a - b
 elseif op == "*" then
-  r = a*b
+  r = a * b
 elseif op == "/" then
-  r = a/b
+  r = a / b
 else
   error("invalid operation")
 end

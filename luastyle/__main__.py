@@ -54,43 +54,48 @@ def main():
     # Style options:
     default = IndentOptions()
     style_group = OptionGroup(parser, "Beautifier Options")
-    style_group.add_option('-s', '--indent-size',
-                           metavar='N', type='int',
-                           dest='indent_size',
-                           help='indentation size [2]',
-                           default=2)
     style_group.add_option('-c', '--indent-char',
                            metavar='S', type='string',
                            dest='indent_char',
                            help='indentation character [" "]',
                            default=' ')
-    style_group.add_option('-t', '--indent-with-tabs',
-                           action='store_true',
-                           dest='indent_with_tabs',
-                           help='indent with tabs, overrides -s and -c',
-                           default=False)
     style_group.add_option('-l', '--indent-level',
                            metavar='N', type='int',
                            dest='initial_indent_level',
                            help='initial indentation level [0]',
                            default=0)
+    style_group.add_option('-o', '--space-around-op',
+                           action='store_true',
+                           dest='space_around_op',
+                           help='check spaces around operators',
+                           default=default.comma_check)
+    style_group.add_option('-s', '--indent-size',
+                           metavar='N', type='int',
+                           dest='indent_size',
+                           help='indentation size [2]',
+                           default=2)
+    style_group.add_option('-t', '--indent-with-tabs',
+                           action='store_true',
+                           dest='indent_with_tabs',
+                           help='indent with tabs, overrides -s and -c',
+                           default=False)
     style_group.add_option('-A', '--assign-cont-level',
                            metavar='N', type='int',
                            dest='assign_cont_level',
                            help='continuation lines level in assignment [' +
                                 str(default.assign_cont_line_level) + ']',
                            default=default.assign_cont_line_level)
+    style_group.add_option('-C', '--comma-check',
+                           action='store_true',
+                           dest='comma_check',
+                           help='check spaces after comma',
+                           default=default.comma_check)
     style_group.add_option('-F', '--func-cont-level',
                            metavar='N', type='int',
                            dest='func_cont_level',
                            help='continuation lines level in function arguments [' +
                                 str(default.func_cont_line_level) + ']',
                            default=default.func_cont_line_level)
-    style_group.add_option('-C', '--comma-check',
-                           action='store_true',
-                           dest='comma_check',
-                           help='check spaces after comma',
-                           default=default.comma_check)
     style_group.add_option('-R', '--indent-return',
                            action='store_true',
                            dest='indent_return_cont',

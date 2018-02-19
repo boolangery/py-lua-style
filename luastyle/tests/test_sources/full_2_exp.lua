@@ -43,7 +43,7 @@ function Date:_init(t, ...)
     else
     end
   else
-    error("bad type for Date constructor: "..type(t), 2)
+    error("bad type for Date constructor: " .. type(t), 2)
   end
   self:set(time)
 end

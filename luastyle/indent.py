@@ -25,10 +25,11 @@ class IndentOptions:
         self.func_cont_line_level = 2
         self.comma_check = False
         self.indent_return_cont = False
+        self.space_around_op = False
 
 
 IGNORE = [Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG, Tokens.LINE_COMMENT, Tokens.COMMENT]
-
+IGNORE_COMMENTS = [Tokens.SHEBANG, Tokens.LINE_COMMENT, Tokens.COMMENT]
 
 class Modes(Enum):
     NESTED = 1
@@ -153,6 +154,7 @@ class IndentVisitor:
     # Control Structures                                                      #
     # ####################################################################### #
     def visit_While(self, node):
+        self.visit(node.test)
         self.inc_level()
         self.visit(node.body)
         self.dec_level()
@@ -166,24 +168,33 @@ class IndentVisitor:
         self.inc_level()
         self.visit(node.body)
         self.dec_level()
+        self.visit(node.test)
 
     def visit_Forin(self, node):
+        self.visit(node.iter)
+        self.visit(node.targets)
         self.inc_level()
         self.visit(node.body)
         self.dec_level()
 
     def visit_Fornum(self, node):
+        self.visit(node.target)
+        self.visit(node.start)
+        self.visit(node.stop)
+        self.visit(node.step)
         self.inc_level()
         self.visit(node.body)
         self.dec_level()
 
     def visit_If(self, node):
         self.inc_level()
+        self.visit(node.test)
         self.visit(node.body)
         self.visit(node.orelse)
         self.dec_level()
 
     def visit_ElseIf(self, node):
+        self.visit(node.test)
         self.visit(node.body)
         self.visit(node.orelse)
 
@@ -306,8 +317,27 @@ class IndentVisitor:
     # Operators                                                               #
     # ####################################################################### #
     def visit_BinaryOp(self, node):
+        self.indent_lines(node)  # indent lines starting with operator
         self.visit(node.left)
         self.visit(node.right)
+
+        # check there is one whitespace around operator token
+        if self._options.space_around_op:
+            operator_token = node.right.edit().first(IGNORE).prev()
+            tok_left = operator_token.prev(IGNORE_COMMENTS)
+            tok_right = operator_token.next(IGNORE_COMMENTS)
+
+            # handle the case where we are at the start of a new line
+            if not tok_left.prev(IGNORE_COMMENTS).type == Tokens.NEWLINE.value:
+                if tok_left.type == Tokens.SPACE.value:
+                    tok_left.text = ' '
+                else:
+                    operator_token.insertLeft(Tokens.SPACE, ' ')
+            if not tok_right.type == Tokens.NEWLINE.value:
+                if tok_right.type == Tokens.SPACE.value:
+                    tok_right.text = ' '
+                else:
+                    operator_token.insertRight(Tokens.SPACE, ' ')
 
     # ####################################################################### #
     # Types and Values                                                        #

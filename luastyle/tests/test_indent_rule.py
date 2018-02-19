@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 class IndentRuleTestCase(unittest.TestCase):
     def setupTest(self, filePrefix, options=indent.IndentOptions()):
         options.comma_check = True
+        options.space_around_op = True
 
         self.maxDiff = None
         raw, exp = '', ''
@@ -86,3 +87,6 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_chained_call(self):
         self.setupTest('chained_call')
+
+    def test_operators(self):
+        self.setupTest('operators')
