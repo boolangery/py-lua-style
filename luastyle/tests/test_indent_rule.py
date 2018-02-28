@@ -1,6 +1,9 @@
 import unittest
+import os
 from luastyle import indent
 import logging
+
+currdir = os.path.dirname(__file__)
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
@@ -11,9 +14,9 @@ class IndentRuleTestCase(unittest.TestCase):
 
         self.maxDiff = None
         raw, exp = '', ''
-        with open('./test_sources/' + filePrefix + '_raw.lua', 'r') as content_file:
+        with open(currdir + '/test_sources/' + filePrefix + '_raw.lua', 'r') as content_file:
             raw = content_file.read()
-        with open('./test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
+        with open(currdir + '/test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
             exp = content_file.read()
         formatted = indent.IndentRule(options).apply(raw)
         print(formatted)

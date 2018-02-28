@@ -1,6 +1,9 @@
 py-lua-style
 ===============================================================================
 
+.. image:: https://travis-ci.org/boolangery/py-lua-style.svg?branch=master
+    :target: https://travis-ci.org/boolangery/py-lua-style
+
 A Lua code formatter written in Python.
 
 
