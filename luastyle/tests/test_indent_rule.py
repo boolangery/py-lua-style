@@ -85,6 +85,9 @@ class IndentRuleTestCase(unittest.TestCase):
         options.indent_return_cont = True
         self.setupTest('return', options)
 
+    def test_return_1(self):
+        self.setupTest('return_1')
+
     def test_chained_call(self):
         self.setupTest('chained_call')
 

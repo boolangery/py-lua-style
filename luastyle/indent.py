@@ -362,8 +362,8 @@ class IndentVisitor:
     def visit_Return(self, node):
         if self._options.indent_return_cont:
             self.inc_level()
-            self.indent_lines(node.values)
-            self.visit(node.values)
+        self.visit(node.values)
+        if self._options.indent_return_cont:
             self.dec_level()
 
 
