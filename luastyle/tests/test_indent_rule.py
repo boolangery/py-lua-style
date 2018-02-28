@@ -96,3 +96,10 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_operators(self):
         self.setupTest('operators')
+
+    def test_check_comments(self):
+        options = indent.IndentOptions()
+        options.check_space_before_line_comment = True
+        options.space_before_line_comments = 2
+        options.check_space_before_line_comment_text = True
+        self.setupTest('check_comments', options)

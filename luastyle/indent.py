@@ -27,6 +27,11 @@ class IndentOptions:
         self.indent_return_cont = False
         self.space_around_op = False
 
+        self.check_space_before_line_comment = False
+        self.space_before_line_comments = 1
+        self.check_space_before_line_comment_text = False
+        self.space_before_line_comment_text = 1
+
 
 IGNORE = [Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG, Tokens.LINE_COMMENT, Tokens.COMMENT]
 IGNORE_COMMENTS = [Tokens.SHEBANG, Tokens.LINE_COMMENT, Tokens.COMMENT]
@@ -371,6 +376,7 @@ CHECK_SPACE_AFTER_COMMA_IF_NOT_IN = [
     Tokens.NEWLINE.value
 ]
 
+
 class IndentRule(FormatterRule):
     """
     This rule indent the code.
@@ -378,6 +384,53 @@ class IndentRule(FormatterRule):
     def __init__(self, options):
         FormatterRule.__init__(self)
         self._options = options
+
+    def check_comma(self, tokens):
+        """
+        If comma_check check option is enabled,
+        ensure that each comma is followed by a space.
+        """
+        if self._options.comma_check:
+            for t in tokens:
+                if t.type == Tokens.COMMA.value:
+                    next = t.next([])  # no ignore
+                    if next:
+                        if next.type == Tokens.SPACE.value:
+                            next.text = ' '
+                        elif next.type not in CHECK_SPACE_AFTER_COMMA_IF_NOT_IN:
+                            t.insertRight(Tokens.SPACE, ' ')
+
+    def check_line_comments(self, tokens):
+        def do_check(t):
+            if t.type == Tokens.LINE_COMMENT.value:
+                if self._options.check_space_before_line_comment:
+                    # check space before comment opening
+                    # if the comment is not alone on the line
+                    if not t.isFirstOnLine():
+                        prevtok = t.prev([])  # no ignore
+                        if prevtok.type == Tokens.SPACE.value:
+                            prevtok.text = ' ' * self._options.space_before_line_comments
+                        else:
+                            t.insertLeft(Tokens.SPACE, ' ' * self._options.space_before_line_comments)
+                if self._options.check_space_before_line_comment_text:
+                    # check for space after comment opening
+                    comment_text = t.text
+                    comment_witout_dash = comment_text.lstrip('-')
+                    dash_count = len(comment_text) - len(comment_witout_dash)
+                    comment_text = comment_witout_dash.lstrip()
+                    comment_text = '-' * dash_count + self._options.space_before_line_comment_text * ' ' + comment_text
+                    t.text = comment_text
+
+        if self._options.check_space_before_line_comment or \
+                self._options.check_space_before_line_comment_text:
+            for t in tokens:
+                do_check(t)
+
+            # last comment is not included in edit(), because it only grab hidden token before the node
+            last_tok = tokens.last().next([Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG, Tokens.COMMENT])
+            if last_tok:
+                do_check(last_tok)
+
 
     def apply(self, input):
         # try to get AST tree, do nothing if invalid source code is provided
@@ -390,16 +443,9 @@ class IndentRule(FormatterRule):
         # indent
         IndentVisitor(self._options).visit(tree)
 
-        # check SPACE after comma
-        if self._options.comma_check:
-            for t in tree.edit():
-                if t.type == Tokens.COMMA.value:
-                    next = t.next([])  # no ignore
-                    if next:
-                        if next.type == Tokens.SPACE.value:
-                            next.text = ' '
-                        elif next.type not in CHECK_SPACE_AFTER_COMMA_IF_NOT_IN:
-                            t.insertRight(Tokens.SPACE, ' ')
+        tokens = tree.edit()
+        self.check_comma(tokens)
+        self.check_line_comments(tokens)
 
         # simply return modified tokens to source
         return tree.edit().allToSource()

@@ -29,24 +29,29 @@ Usage: luastyle [options] filename
 .. code-block::
 
     CLI Options:
-      --version                   Show program's version number and exit
-      -h, --help                  Show this help message and exit
-      -r, --replace               Write output in-place, replacing input
-      --config=F                  Path to config file
-      --config-generate           Generate a default config file
-      --type=EXT                  File extension to indent (can be repeated) [lua]
-      -d, --debug                 Enable debugging messages
-      -j N, --jobs=N              Number of parallel jobs in recursive mode
+      --version                     Show program's version number and exit
+      -h, --help                    Show this help message and exit
+      -r, --replace                 Write output in-place, replacing input
+      --config=F                    Path to config file
+      --config-generate             Generate a default config file
+      --type=EXT                    File extension to indent (can be repeated) [lua]
+      -d, --debug                   Enable debugging messages
+      -j N, --jobs=N                Number of parallel jobs in recursive mode
 
     Beautifier Options:
-      -s N, --indent-size=N       Indentation size [2]
-      -c S, --indent-char=S       Indentation character [" "]
-      -t, --indent-with-tabs      Indent with tabs, overrides -s and -c
-      -l N, --indent-level=N      Initial indentation level [0]
-      -A N, --assign-cont-level=N Continuation lines level in assignment [1]
-      -F N, --func-cont-level=N   Continuation lines level in function arguments [2]
-      -C, --comma-check           Check spaces after comma
-      -R, --indent-return         Indent return continuation lines on next level
+      -s N, --indent-size=N         Indentation size [2]
+      -c S, --indent-char=S         Indentation character [" "]
+      -t, --indent-with-tabs        Indent with tabs, overrides -s and -c
+      -l N, --indent-level=N        Initial indentation level [0]
+      -A N, --assign-cont-level=N   Continuation lines level in assignment [1]
+      -F N, --func-cont-level=N     Continuation lines level in function arguments [2]
+      -C, --comma-check             Check spaces after comma
+      -R, --indent-return           Indent return continuation lines on next level
+
+      -m, --check-line-comment      Ensure that line comments are separated by at least N char from left sentence
+      -n N, --com-space-size=N      If --check-line-comment is enabled, configure the number of spaces [1]
+      -M, --check-line-comment-text Ensure that line comments text is started by at least N char
+      -N N, --com-txt-space-size=N  If --check-line-comment-text is enabled, configure the number of spaces [1]
 
 
 Loading settings from environment or .luastylerc
@@ -61,14 +66,14 @@ In addition to CLI arguments, you may pass a config file via:
 Options examples
 ------------------------------------------------------------------------------
 
-Continuation lines level in assignment
+Continuation lines level in assignment (-A)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
 
     -A N, --assign-cont-level=N Continuation lines level in assignment [1]
 
-With:
+With this raw source code:
 
 .. code-block:: lua
 
@@ -94,7 +99,7 @@ With:
     ....processor:getRawData()
 
 
-Continuation lines level in function arguments
+Continuation lines level in function arguments (-F)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block::
@@ -119,3 +124,39 @@ With:
     ....param_4, param_5, param_6)
     ..return do_something()
     end
+
+Comments formatting options (-m, -n, -M, -N)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Available options are:
+
+.. code-block::
+
+    -m, --check-line-comment      Ensure that line comments are separated by at least N char from left sentence
+    -n N, --com-space-size=N      If --check-line-comment is enabled, configure the number of spaces [1]
+    -M, --check-line-comment-text Ensure that line comments text is started by at least N char
+    -N N, --com-txt-space-size=N  If --check-line-comment-text is enabled, configure the number of spaces [1]
+
+With this raw source code:
+
+.. code-block:: lua
+
+    --Lorem ipsum dolor sit amet
+    local foo--In sodales elit id orci mollis varius
+
+
+.. code-block:: lua
+
+    -- luastyle -m -n 2 -M -N 1 source.lua
+
+    -- Lorem ipsum dolor sit amet
+    local foo  -- In sodales elit id orci mollis varius
+
+
+
+
+
+
+
+
+

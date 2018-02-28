@@ -79,6 +79,18 @@ def main():
                            dest='indent_with_tabs',
                            help='indent with tabs, overrides -s and -c',
                            default=False)
+    style_group.add_option('-m', '--check-line-comment',
+                           action='store_true',
+                           dest='check_space_before_line_comment',
+                           help='ensure that line comments are separated by at least N char from left sentence',
+                           default=False)
+    style_group.add_option('-n', '--com-space-size',
+                           metavar='N', type='int',
+                           dest='space_before_line_comments',
+                           help='if --check-line-comment is enabled, configure the number of spaces [1]',
+                           default=1)
+
+
     style_group.add_option('-A', '--assign-cont-level',
                            metavar='N', type='int',
                            dest='assign_cont_level',
@@ -96,11 +108,23 @@ def main():
                            help='continuation lines level in function arguments [' +
                                 str(default.func_cont_line_level) + ']',
                            default=default.func_cont_line_level)
+    style_group.add_option('-M', '--check-line-comment-text',
+                           action='store_true',
+                           dest='check_space_before_line_comment_text',
+                           help='ensure that line comments text is started by at least N char',
+                           default=False)
+    style_group.add_option('-N', '--com-txt-space-size',
+                           metavar='N', type='int',
+                           dest='space_before_line_comment_text',
+                           help='if --check-line-comment-text is enabled, configure the number of spaces [1]',
+                           default=1)
     style_group.add_option('-R', '--indent-return',
                            action='store_true',
                            dest='indent_return_cont',
                            help='indent return continuation lines on next level',
                            default=default.comma_check)
+
+
     parser.add_option_group(style_group)
 
     (options, args) = parser.parse_args()
@@ -155,6 +179,11 @@ def main():
         indent_options.func_cont_line_level = options.func_cont_level
         indent_options.comma_check = options.comma_check
         indent_options.indent_return_cont = options.indent_return_cont
+
+        indent_options.check_space_before_line_comment = options.check_space_before_line_comment
+        indent_options.space_before_line_comments = options.space_before_line_comments
+        indent_options.check_space_before_line_comment_text = options.check_space_before_line_comment_text
+        indent_options.space_before_line_comment_text = options.space_before_line_comment_text
 
     # build a filename list
     filenames = []
