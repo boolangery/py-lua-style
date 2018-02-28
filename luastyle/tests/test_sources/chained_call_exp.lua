@@ -38,3 +38,6 @@ local player_shape = types.shape{
       id = types.integer
     }):is_optional()
 }
+
+assert.is_true(process:worker('foo').emulate())
+assert.is_true(42, process:worker('foo'):emulate())

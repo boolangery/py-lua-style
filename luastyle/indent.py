@@ -301,9 +301,12 @@ class IndentVisitor:
         self.visit(node.source)
         self.visit(node.func)
 
-        self.inc_level_if(is_splitted)
+        if is_splitted:
+            self.inc_level_if(is_splitted)
         self.visit(node.func)
-        self.indent_line(node.func.edit().first().line())
+
+        if is_splitted:
+            self.indent_line(node.func.edit().first().line())
         self.inc_level_if(has_parenthesis)
         self.visit(node.args)
         self.dec_level_if(has_parenthesis)
@@ -311,7 +314,8 @@ class IndentVisitor:
         if has_parenthesis:
             self.indent_last_if_first(node, Tokens.CPAR)
 
-        self.dec_level_if(is_splitted)
+        if is_splitted:
+            self.dec_level_if(is_splitted)
 
     # ####################################################################### #
     # Operators                                                               #
