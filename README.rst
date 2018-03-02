@@ -3,6 +3,10 @@ py-lua-style
 
 .. image:: https://travis-ci.org/boolangery/py-lua-style.svg?branch=master
     :target: https://travis-ci.org/boolangery/py-lua-style
+.. image:: https://img.shields.io/pypi/v/luastyle.svg
+    :target: https://pypi.python.org/pypi/luastyle/
+.. image:: https://img.shields.io/pypi/pyversions/luastyle.svg
+    :target: https://pypi.python.org/pypi/luastyle/
 
 A Lua code formatter written in Python.
 
