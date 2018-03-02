@@ -16,7 +16,17 @@ average = 12}
    process {
   {
     {
+     [true] = false,
+            ['true'] = 'false',
+  [process()] = 42,
+    }
+    }
+  }
 
-    }
-    }
+     local foo = {
+     356,
+    [true] = false,
+    ['true'] = 'false',
+    [process()] = 42,
+   foo = 1,
   }

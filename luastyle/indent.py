@@ -356,10 +356,15 @@ class IndentVisitor:
         o_brace = editor.firstOfType(Tokens.OBRACE)
         if o_brace.isFirstOnLine():
             self.indent_line(o_brace.line())
+
         self.inc_level()
-        self.visit(node.keys)
-        self.visit(node.values)
+        for key in node.keys:
+            self.indent_lines(key)  # indent key line
+            self.visit(key)
+        for value in node.values:
+            self.visit(value)
         self.dec_level()
+
         c_brace = editor.lastOfType(Tokens.CBRACE)
         if c_brace.isFirstOnLine():
             self.indent_line(c_brace.line())
