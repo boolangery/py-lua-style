@@ -20,10 +20,11 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
     ],
-    install_requires=['luaparser<=1.2.0'],
+    install_requires=['luaparser<=1.2.1'],
     entry_points={
         'console_scripts': [
             'luastyle = luastyle.__main__:main'
         ]
     }
 )
+
