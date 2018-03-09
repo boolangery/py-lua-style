@@ -15,3 +15,17 @@
         -- convert this UTC date to local.
   end
           -- convert this UTC date to local.
+
+  function nest.create (bar, def)
+    local parameterTable =
+    {
+    ----------------------process version----------------------
+    -- Version 1,2,2_1,3
+      { value = ModeBoost, processVersion = {custom.FOO,custom.FOO,custom.FOO,custom.FOO}},
+    -- Version 2,2_1,3
+    -- Min/Max have to be refreshed before other parameters for value conversion
+      { value = DefaultValueMin, processVersion = {custom.FOO,custom.FOO,custom.FOO}},
+    -- Version 2, 2_1
+      { value = PowerElecTotal, processVersion = {custom.FOO,custom.FOO}},
+    }
+    end

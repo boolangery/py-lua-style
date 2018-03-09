@@ -352,22 +352,15 @@ class IndentVisitor:
     # Types and Values                                                        #
     # ####################################################################### #
     def visit_Table(self, node):
-        editor = node.edit()
-        o_brace = editor.firstOfType(Tokens.OBRACE)
-        if o_brace.isFirstOnLine():
-            self.indent_line(o_brace.line())
-
+        self.indent_lines(node)  # handle comments and braces
         self.inc_level()
+
         for key in node.keys:
             self.indent_lines(key)  # indent key line
             self.visit(key)
         for value in node.values:
             self.visit(value)
         self.dec_level()
-
-        c_brace = editor.lastOfType(Tokens.CBRACE)
-        if c_brace.isFirstOnLine():
-            self.indent_line(c_brace.line())
 
     def visit_Return(self, node):
         if self._options.indent_return_cont:
