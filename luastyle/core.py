@@ -60,7 +60,7 @@ class FilesProcessor:
         total_lines = 0
 
         # We can use a with statement to ensure threads are cleaned up promptly
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self._jobs) as executor:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=self._jobs) as executor:
             # Start process operations and mark each future with its filename
             future_to_file = {executor.submit(self._process_one, file): file for file in files}
             for future in concurrent.futures.as_completed(future_to_file):
