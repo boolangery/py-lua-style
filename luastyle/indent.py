@@ -1,6 +1,6 @@
 import logging
 from luaparser import ast, astnodes
-from luaparser.asttokens import Tokens
+from luaparser.asttokens import Tokens, DEFAULT_IGNORE
 from enum import Enum
 
 class FormatterRule:
@@ -110,15 +110,16 @@ class IndentVisitor:
         else:
             line.indent(self.get_current_indent(offset), '\t')
 
-    def indent_lines(self, node, offset=0):
+    def indent_lines(self, node, offset=0, ignore_token=DEFAULT_IGNORE):
         for line in node.edit().lines():
             first = line.first()
             if first:
-                if first.isFirstOnLine():
+                if first.isFirstOnLine(ignore_token):
                     if not self._options.indent_with_tabs:
-                        line.indent(self.get_current_indent(offset), self._options.indent_char)
+                        first.line().indent(self.get_current_indent(offset), self._options.indent_char)
                     else:
-                        line.indent(self.get_current_indent(offset), '\t')
+                        first.line().indent(self.get_current_indent(offset), '\t')
+
 
     def visit_Chunk(self, node):
         self.visit(node.body)
@@ -131,7 +132,12 @@ class IndentVisitor:
         self.visit(node.body)
 
     def visit_Node(self, node):
-        self.indent_lines(node)
+        """We enter this when no specific visitor has been found.
+        Currently:
+            Number,
+            String
+        """
+        self.indent_lines(node, 0, [Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG, Tokens.COMMA, Tokens.OBRACK])
 
     # ####################################################################### #
     # Assignments                                                             #
@@ -355,8 +361,18 @@ class IndentVisitor:
         self.indent_lines(node)  # handle comments and braces
         self.inc_level()
 
+        # handle the case of comments juste before the last CBRACE
+        # so loop through node lines in reversed order and break
+        # on token != Comment or ComentLine
+        lines = list(node.edit().lines())
+        for line in reversed(lines):
+            firsttok = line.first([Tokens.SPACE, Tokens.NEWLINE, Tokens.SHEBANG])
+            if firsttok and firsttok.type in [Tokens.COMMENT.value, Tokens.LINE_COMMENT.value]:
+                self.indent_line(line)
+            elif not (firsttok and firsttok.type in [Tokens.CBRACE.value]):
+                break
+
         for key in node.keys:
-            self.indent_lines(key)  # indent key line
             self.visit(key)
         for value in node.values:
             self.visit(value)

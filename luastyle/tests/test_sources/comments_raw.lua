@@ -27,5 +27,6 @@
       { value = DefaultValueMin, processVersion = {custom.FOO,custom.FOO,custom.FOO}},
     -- Version 2, 2_1
       { value = PowerElecTotal, processVersion = {custom.FOO,custom.FOO}},
+      -- toto
     }
     end

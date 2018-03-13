@@ -7,6 +7,7 @@ tuesday = 2,
 foo = 'bar',
 },
 non_nested = 42
+    ,12
 }
 local inline_table = {'1', '2', '3', '4'}
 local strange_table = {model = 'car',
