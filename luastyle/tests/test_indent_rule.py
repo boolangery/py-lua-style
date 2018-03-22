@@ -1,6 +1,6 @@
 import unittest
 import os
-from luastyle import indent
+from luastyle import indenter
 import logging
 
 currdir = os.path.dirname(__file__)
@@ -8,7 +8,7 @@ currdir = os.path.dirname(__file__)
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 
 class IndentRuleTestCase(unittest.TestCase):
-    def setupTest(self, filePrefix, options=indent.IndentOptions()):
+    def setupTest(self, filePrefix, options=indenter.IndentOptions()):
         options.comma_check = True
         options.space_around_op = True
 
@@ -18,7 +18,7 @@ class IndentRuleTestCase(unittest.TestCase):
             raw = content_file.read()
         with open(currdir + '/test_sources/' + filePrefix + '_exp.lua', 'r') as content_file:
             exp = content_file.read()
-        formatted = indent.IndentRule(options).apply(raw)
+        formatted = indenter.IndentRule(options).apply(raw)
         print(formatted)
         self.assertEqual(formatted, exp)
 
