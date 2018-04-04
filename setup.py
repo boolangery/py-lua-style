@@ -1,5 +1,37 @@
-from setuptools import setup
+from setuptools import setup, Extension
+from distutils.command.sdist import sdist
+from distutils.command.build_ext import build_ext
 import luastyle
+
+ext_modules = [
+    Extension("luastyle.indenter",
+    ["luastyle/indenter.pyx"],
+    language='c++')]
+
+pyx_ext_modules = [Extension("luastyle.indenter",
+                             sources=["luastyle/indenter.pyx"],
+                             language='c++')]
+
+ext_modules = [Extension('luastyle.indenter',
+                         sources=['luastyle/indenter.cpp'],
+                         libraries=[],
+                         include_dirs=[],
+                         define_macros=[])]
+
+
+class BuildExt(build_ext):
+    def run(self):
+        import Cython
+        import Cython.Build
+        Cython.Build.cythonize(pyx_ext_modules, verbose=True)
+        build_ext.run(self)
+
+class Sdist(sdist):
+    def __init__(self, *args, **kwargs):
+        import Cython
+        import Cython.Build
+        Cython.Build.cythonize(pyx_ext_modules, verbose=True)
+        sdist.__init__(self, *args, **kwargs)
 
 setup(
     name='luastyle',
@@ -20,11 +52,12 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
     ],
-    install_requires=['luaparser<=1.2.1'],
+    install_requires=['luaparser<=1.2.2'],
     entry_points={
         'console_scripts': [
             'luastyle = luastyle.__main__:main'
         ]
-    }
+    },
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': BuildExt, 'sdist': Sdist}
 )
-

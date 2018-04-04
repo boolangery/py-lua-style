@@ -1,8 +1,8 @@
 router:route('/toto',
-  blabla, builder:build()
+    blabla, builder:build()
     :done(
       alpha_parameter
-    ))
+  ))
   :get('/foo/:bar')
   :put('/foo/:id')
   :post('/foo/:id',
@@ -36,7 +36,7 @@ local player_shape = types.shape{
     types.shape{
       name = types.string,
       id = types.integer
-    }):is_optional()
+  }):is_optional()
 }
 
 assert.is_true(process:worker('foo').emulate())

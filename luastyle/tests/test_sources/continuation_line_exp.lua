@@ -8,3 +8,12 @@ do
   longvarname = longvarname ..
     "Thanks for reading this example!"
 end
+
+local my_table = {
+  'monday',
+  "friday"
+}
+
+local my_func = function()
+  print(bar)
+end

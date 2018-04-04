@@ -47,3 +47,11 @@ if not parm then
 else
   ps = parms[parm]
 end
+
+if (foo == constants.DAYS.Monday) or
+    (month == constants.MONTH.October) then
+  print('success')
+elseif (foo == constants.DAYS.Monday) or
+    (month == constants.MONTH.October) then
+  print('success')
+end

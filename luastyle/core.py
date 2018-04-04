@@ -3,7 +3,7 @@ import sys
 import time
 import json
 import concurrent.futures
-from luastyle.indent import IndentRule, IndentOptions
+from luastyle.indenter import IndentRule, IndentOptions
 
 
 class Configuration:

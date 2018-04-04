@@ -12,7 +12,7 @@ end
 for i,
 v
 in
-pairs({})
+  pairs({})
 do
   print(foo)
 end

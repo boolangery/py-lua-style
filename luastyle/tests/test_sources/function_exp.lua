@@ -19,31 +19,31 @@ function BehaviorEngine:init(protocolDirectory, behaviorDatabase)
 
   -- listen to protocol change:
   self._protDirectory.protocolAdded:addListener(
-    function(name)
-      -- on new protocol, listen to newNode event:
-      local index
-      index = self._protDirectory:protocol(name).client.onNewNode:addListener(
-        function(rawNode)
-          self:_onNewNode(rawNode)
-        end
-      )
-      self._regListeners.onNewNode[name] = index
-      -- on new protocol, listen to newState event:
-      index = self._protDirectory:protocol(name).client.onNewState:addListener(
-        function(rawState)
-          self:_onNewState(rawState)
-        end
-      )
-      self._regListeners.onNewState[name] = index
-    end
-  )
+      function(name)
+        -- on new protocol, listen to newNode event:
+        local index
+        index = self._protDirectory:protocol(name).client.onNewNode:addListener(
+          function(rawNode)
+            self:_onNewNode(rawNode)
+          end
+        )
+        self._regListeners.onNewNode[name] = index
+        -- on new protocol, listen to newState event:
+        index = self._protDirectory:protocol(name).client.onNewState:addListener(
+          function(rawState)
+            self:_onNewState(rawState)
+          end
+        )
+        self._regListeners.onNewState[name] = index
+      end
+    )
 
   -- listen to reader change:
   self._database.onReload:addListener(
-    function()
-      -- TODO: reload data in memory...
-    end
-  )
+      function()
+        -- TODO: reload data in memory...
+      end
+    )
 
 end
 

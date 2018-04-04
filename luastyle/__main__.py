@@ -5,7 +5,7 @@ import logging
 from optparse import OptionParser, OptionGroup
 import luastyle
 from luastyle.core import FilesProcessor, Configuration
-from luastyle.indent import IndentOptions
+from luastyle.indenter import IndentOptions
 
 
 def abort(msg):
@@ -18,7 +18,7 @@ def main():
     parser = OptionParser(usage='usage: %prog [options] file|directory',
                           version='%prog ' + luastyle.__version__)
     cli_group = OptionGroup(parser, "CLI Options")
-    cli_group.add_option('-r', '--replace',
+    cli_group.add_option('-i', '--in-place',
                          action='store_true',
                          dest='replace',
                          help='write output in-place, replacing input',
@@ -54,21 +54,31 @@ def main():
     # Style options:
     default = IndentOptions()
     style_group = OptionGroup(parser, "Beautifier Options")
+    style_group.add_option('-a', '--space-around-assign',
+                           action='store_true',
+                           dest='space_around_assign',
+                           help='ensure one space before and after assign op "="',
+                           default=False)
     style_group.add_option('-c', '--indent-char',
                            metavar='S', type='string',
                            dest='indent_char',
                            help='indentation character [" "]',
                            default=' ')
+    style_group.add_option('-f', '--check-field-list',
+                           action='store_true',
+                           dest='check_field_list',
+                           help='format field-list (table)',
+                           default=False)
     style_group.add_option('-l', '--indent-level',
                            metavar='N', type='int',
                            dest='initial_indent_level',
                            help='initial indentation level [0]',
                            default=0)
-    style_group.add_option('-o', '--space-around-op',
+    style_group.add_option('-p', '--check-param-list',
                            action='store_true',
-                           dest='space_around_op',
-                           help='check spaces around operators',
-                           default=default.comma_check)
+                           dest='check_param_list',
+                           help='format var-list, name-list and expr-list',
+                           default=False)
     style_group.add_option('-s', '--indent-size',
                            metavar='N', type='int',
                            dest='indent_size',
@@ -79,35 +89,23 @@ def main():
                            dest='indent_with_tabs',
                            help='indent with tabs, overrides -s and -c',
                            default=False)
-    style_group.add_option('-m', '--check-line-comment',
-                           action='store_true',
-                           dest='check_space_before_line_comment',
-                           help='ensure that line comments are separated by at least N char from left sentence',
-                           default=False)
-    style_group.add_option('-n', '--com-space-size',
-                           metavar='N', type='int',
-                           dest='space_before_line_comments',
-                           help='if --check-line-comment is enabled, configure the number of spaces [1]',
-                           default=1)
+    style_group.add_option('--close-on-first-level',
+                           action='store_false',
+                           dest='close_on_lowest_level',
+                           help='in several closing tokens, indent on first token level',
+                           default=True)
 
-
-    style_group.add_option('-A', '--assign-cont-level',
-                           metavar='N', type='int',
-                           dest='assign_cont_level',
-                           help='continuation lines level in assignment [' +
-                                str(default.assign_cont_line_level) + ']',
-                           default=default.assign_cont_line_level)
-    style_group.add_option('-C', '--comma-check',
-                           action='store_true',
-                           dest='comma_check',
-                           help='check spaces after comma',
-                           default=default.comma_check)
     style_group.add_option('-F', '--func-cont-level',
                            metavar='N', type='int',
                            dest='func_cont_level',
                            help='continuation lines level in function arguments [' +
                                 str(default.func_cont_line_level) + ']',
                            default=default.func_cont_line_level)
+    style_group.add_option('-I', '--if-cont-level',
+                           metavar='N', type='int',
+                           dest='if_cont_line_level',
+                           help='if statement continuation line level [2]',
+                           default=2)
     style_group.add_option('-M', '--check-line-comment-text',
                            action='store_true',
                            dest='check_space_before_line_comment_text',
@@ -118,12 +116,11 @@ def main():
                            dest='space_before_line_comment_text',
                            help='if --check-line-comment-text is enabled, configure the number of spaces [1]',
                            default=1)
-    style_group.add_option('-R', '--indent-return',
+    style_group.add_option('-S', '--skip-sem-colon',
                            action='store_true',
-                           dest='indent_return_cont',
-                           help='indent return continuation lines on next level',
-                           default=default.comma_check)
-
+                           dest='skip_semi_colon',
+                           help='skip all semi-colon after statements',
+                           default=False)
 
     parser.add_option_group(style_group)
 
@@ -175,15 +172,15 @@ def main():
         indent_options.indent_with_tabs = options.indent_with_tabs
         indent_options.initial_indent_level = options.initial_indent_level
 
-        indent_options.assign_cont_line_level = options.assign_cont_level
         indent_options.func_cont_line_level = options.func_cont_level
-        indent_options.comma_check = options.comma_check
-        indent_options.indent_return_cont = options.indent_return_cont
 
-        indent_options.check_space_before_line_comment = options.check_space_before_line_comment
-        indent_options.space_before_line_comments = options.space_before_line_comments
         indent_options.check_space_before_line_comment_text = options.check_space_before_line_comment_text
         indent_options.space_before_line_comment_text = options.space_before_line_comment_text
+        indent_options.space_around_assign = options.space_around_assign
+        indent_options.check_param_list = options.check_param_list
+        indent_options.check_field_list = options.check_field_list
+        indent_options.skip_semi_colon = options.skip_semi_colon
+        indent_options.if_cont_line_level = options.if_cont_line_level
 
     # build a filename list
     filenames = []

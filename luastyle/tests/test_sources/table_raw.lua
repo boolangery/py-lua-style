@@ -1,8 +1,13 @@
 local table = {
 nested = {
 days = {
-monday = 1,
-tuesday = 2,
+      -- days
+      monday = 1, -- first
+      tuesday = 2, -- second
+      saturday = 3
+      -- third
+      , sunday = 4,
+      -- last
 },
 foo = 'bar',
 },
