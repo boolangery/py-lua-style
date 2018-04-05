@@ -6,6 +6,8 @@ python:
   - "pypy3.5"
 # command to install dependencies
 install:
+  - pip install -r requirements.txt
+  - python setup.py cythonize
   - pip install .
 # command to run tests
 script: pytest

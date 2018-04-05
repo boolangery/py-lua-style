@@ -2,18 +2,9 @@ import sys
 from setuptools import setup, Extension
 from distutils.command.sdist import sdist
 from distutils.command.build_ext import build_ext
+import distutils.cmd
 import luastyle
 
-
-def has_option(name):
-    try:
-        sys.argv.remove('--%s' % name)
-        return True
-    except ValueError:
-        pass
-    return False
-
-OPTION_CYTHONIZE = has_option('cythonize')
 
 ext_modules = [
     Extension("luastyle.indenter",
@@ -38,18 +29,28 @@ class BuildExt(build_ext):
         #Cython.Build.cythonize(pyx_ext_modules, verbose=True)
         build_ext.run(self)
 
+
+class CythonizeCommand(distutils.cmd.Command):
+  description = 'Cythonize cython files'
+  user_options = []
+
+  def initialize_options(self):
+      pass
+
+  def finalize_options(self):
+      pass
+
+  def run(self):
+    import Cython.Build
+    Cython.Build.cythonize(pyx_ext_modules, verbose=True)
+
+
 class Sdist(sdist):
     def __init__(self, *args, **kwargs):
-        import Cython
         import Cython.Build
         Cython.Build.cythonize(pyx_ext_modules, verbose=True)
         sdist.__init__(self, *args, **kwargs)
 
-
-if OPTION_CYTHONIZE:
-    import Cython
-    import Cython.Build
-    Cython.Build.cythonize(pyx_ext_modules, verbose=True)
 
 setup(
     name='luastyle',
@@ -77,5 +78,9 @@ setup(
         ]
     },
     ext_modules=ext_modules,
-    cmdclass={'build_ext': BuildExt, 'sdist': Sdist}
+    cmdclass={
+        'build_ext': BuildExt,
+        'sdist': Sdist,
+        'cythonize': CythonizeCommand,
+    }
 )
