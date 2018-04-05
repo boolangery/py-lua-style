@@ -121,6 +121,18 @@ def main():
                            dest='skip_semi_colon',
                            help='skip all semi-colon after statements',
                            default=False)
+    style_group.add_option('--break-if',
+                           action='store_true',
+                           dest='break_if_statement',
+                           help='break mono-line if statement',
+                           default=False)
+
+
+    style_group.add_option('--strict',
+                           action='store_true',
+                           dest='strict',
+                           help='enable all features',
+                           default=False)
 
     parser.add_option_group(style_group)
 
@@ -174,13 +186,14 @@ def main():
 
         indent_options.func_cont_line_level = options.func_cont_level
 
-        indent_options.check_space_before_line_comment_text = options.check_space_before_line_comment_text
-        indent_options.space_before_line_comment_text = options.space_before_line_comment_text
+        indent_options.check_space_before_line_comment_text = options.check_space_before_line_comment_text or options.strict
+        indent_options.space_before_line_comment_text = options.space_before_line_comment_text or options.strict
         indent_options.space_around_assign = options.space_around_assign
-        indent_options.check_param_list = options.check_param_list
-        indent_options.check_field_list = options.check_field_list
-        indent_options.skip_semi_colon = options.skip_semi_colon
+        indent_options.check_param_list = options.check_param_list or options.strict
+        indent_options.check_field_list = options.check_field_list or options.strict
+        indent_options.skip_semi_colon = options.skip_semi_colon or options.strict
         indent_options.if_cont_line_level = options.if_cont_line_level
+        indent_options.break_if_statement = options.break_if_statement or options.strict
 
     # build a filename list
     filenames = []

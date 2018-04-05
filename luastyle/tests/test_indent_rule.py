@@ -245,16 +245,16 @@ class IndentRuleTestCase(unittest.TestCase):
         src = textwrap.dedent('''\
             a = {1,2,    3    ,    4 , "foo"}
             foo {
-              foo= 42,
-              bar=53,
+              foo   = 42,
+              bar   = 53,
               1,2,3   ,  4
             }
             ''')
         expected = textwrap.dedent('''\
             a = {1, 2, 3, 4, "foo"}
             foo {
-              foo = 42,
-              bar = 53,
+              foo   = 42,
+              bar   = 53,
               1, 2, 3, 4
             }
             ''')
@@ -319,4 +319,31 @@ class IndentRuleTestCase(unittest.TestCase):
 
         options.if_cont_line_level = 4
         formatted = indenter.IndentRule(options).apply(src)
+        self.assertEqual(formatted, expected)
+
+    def test_break_if_statement_option(self):
+        src = textwrap.dedent('''\
+            if foo == nil then print(bar) elseif toto then else print(bar) end
+            if log then log:notice("done") end
+            ''')
+        expected = textwrap.dedent('''\
+            if foo == nil then
+              print(bar)
+            elseif toto then
+            else
+              print(bar)
+            end
+            if log then
+              log:notice("done")
+            end
+            ''')
+
+        options = indenter.IndentOptions()
+        options.break_if_statement = False
+        formatted = indenter.IndentRule(options).apply(src)
+        self.assertEqual(formatted, src)
+
+        options.break_if_statement = True
+        formatted = indenter.IndentRule(options).apply(src)
+        print(formatted)
         self.assertEqual(formatted, expected)

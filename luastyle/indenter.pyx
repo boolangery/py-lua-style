@@ -8,6 +8,7 @@ from libcpp cimport bool
 from libcpp.vector cimport vector
 
 
+
 cdef class IndentOptions:
     """Define indentation options"""
     cdef public int indent_size
@@ -20,6 +21,7 @@ cdef class IndentOptions:
 
     # continuation lines
     cdef public int func_cont_line_level
+    cdef public bool break_if_statement
 
     # space checking
     cdef public bool space_around_op
@@ -46,6 +48,7 @@ cdef class IndentOptions:
         self.close_on_lowest_level = True
 
         self.func_cont_line_level = 2
+        self.break_if_statement = False
 
         self.space_around_op = False
         self.check_space_before_line_comment_text = False
@@ -56,6 +59,7 @@ cdef class IndentOptions:
         self.skip_semi_colon = False
         self.if_cont_line_level = 2
         self.smart_table_align = False
+
 
 
 class Expr(Enum):
@@ -223,9 +227,9 @@ cdef class IndentProcessor:
         src = ''.join([t.text for t in self._src])
         return src
 
-    cpdef bool ws(self, int size):
-        cpdef object last
-        cpdef bool new_line
+    cdef bool ws(self, int size):
+        cdef object last
+        cdef bool new_line
 
         last = self._src[-1]
         new_line = (len(self._src) > 1) and ((self._src[-2].type == CTokens.NEWLINE) or (self._src[-1].type == CTokens.NEWLINE))
@@ -238,6 +242,26 @@ cdef class IndentProcessor:
                 t.type = CTokens.SPACE  # indentation token
                 t.text = ' ' * size
                 self.render(t)
+
+        return True
+
+    cdef bool ensure_newline(self):
+        cdef object t
+
+        # pop trailing space
+        if self._src[-1].type == CTokens.SPACE:
+            self._src.pop()
+
+        for t in reversed(self._src):
+            if t.type == CTokens.NEWLINE:
+                return True
+            elif not t.type in self.HIDDEN_TOKEN:
+                break
+
+        t = CommonToken()
+        t.type = CTokens.NEWLINE
+        t.text = '\n'
+        self.render(t)
 
         return True
 
@@ -280,7 +304,7 @@ cdef class IndentProcessor:
         return True
 
     cdef bool failure(self):
-        cpdef int n_elem_to_delete
+        cdef int n_elem_to_delete
 
         #logging.debug('failure ' + inspect.stack()[1][3])
         self._stream.seek(self._index_stack.back())
@@ -301,10 +325,10 @@ cdef class IndentProcessor:
         self.failure()
         self.save()
 
-    cpdef bool next_is_rc(self, int type, hidden_right=True):
+    cdef bool next_is_rc(self, int type, hidden_right=True):
         """rc is for render and consume token."""
-        cpdef object token
-        cpdef int toktype
+        cdef object token
+        cdef int toktype
 
         token = self._stream.LT(1)
         toktype = token.type
@@ -319,10 +343,10 @@ cdef class IndentProcessor:
 
         return False
 
-    cpdef bool next_is_c(self, int type, hidden_right=True):
+    cdef bool next_is_c(self, int type, hidden_right=True):
         """c is for consume token."""
-        cpdef object token
-        cpdef int toktype
+        cdef object token
+        cdef int toktype
 
         token = self._stream.LT(1)
         toktype = token.type
@@ -340,8 +364,8 @@ cdef class IndentProcessor:
         return self._stream.LT(1).type == type
 
     cdef bool next_in_rc(self, types, bool hidden_right=True):
-        cpdef object token
-        cpdef int tok_type
+        cdef object token
+        cdef int tok_type
 
         token = self._stream.LT(1)
         tok_type = token.type
@@ -415,7 +439,7 @@ cdef class IndentProcessor:
                     is_newline = False
 
     cdef void handle_hidden_right(self, bool is_newline=False):
-        cpdef object t
+        cdef object t
 
         tokens = self._stream.getHiddenTokensToRight(self._right_index)
         if tokens:
@@ -526,8 +550,8 @@ cdef class IndentProcessor:
         return self.failure()
 
     cdef bool parse_var(self, bool is_stat=False):
-        cpdef int number_of_tail
-        cpdef int n
+        cdef int number_of_tail
+        cdef int n
 
         self.save()
         number_of_tail = 0
@@ -602,7 +626,7 @@ cdef class IndentProcessor:
         return self.failure()
 
     cdef bool parse_expr_list(self, bool force_indent=False, bool force_no_indent=False):
-        cpdef bool several_expr
+        cdef bool several_expr
         self.save()
 
         # first pass to check if we need to indent
@@ -672,17 +696,6 @@ cdef class IndentProcessor:
 
         return self.failure()
 
-        self.save()
-        if self.next_is_rc(CTokens.DO, False):
-            self.inc_level()
-            self.handle_hidden_right()
-            if self.parse_block():
-                self.dec_level()
-                if self.next_is_rc(CTokens.END):
-                    return self.success()
-        return self.failure()
-
-
     cdef bool parse_local(self):
         self.save()
         if self.next_is_rc(CTokens.LOCAL):
@@ -723,11 +736,15 @@ cdef class IndentProcessor:
                 if self.next_is_rc(CTokens.THEN, False):
                     self.inc_level()
                     self.handle_hidden_right()
+                    if self._opt.break_if_statement:
+                        self.ensure_newline()
                     if self.parse_block():
                         self.dec_level()
                         while self.parse_elseif_stat():  # one or more
                             pass
                         self.parse_else_stat()  # optional
+                        if self._opt.break_if_statement:
+                            self.ensure_newline()
                         if self.next_is_rc(CTokens.END):
                             return self.success()
 
@@ -735,16 +752,21 @@ cdef class IndentProcessor:
 
     cdef bool parse_elseif_stat(self):
         self.save()
-        if self.next_is_rc(CTokens.ELSEIF):
-            self.inc_level(self._opt.if_cont_line_level)
-            if self.parse_expr():
-                self.dec_level(self._opt.if_cont_line_level)
-                if self.next_is_rc(CTokens.THEN, False):
-                    self.inc_level()
-                    self.handle_hidden_right()
-                    if self.parse_block():
-                        self.dec_level()
-                        return self.success()
+        if self.next_is(CTokens.ELSEIF):
+            if self._opt.break_if_statement:
+                self.ensure_newline()
+            if self.next_is_rc(CTokens.ELSEIF):
+                self.inc_level(self._opt.if_cont_line_level)
+                if self.parse_expr():
+                    self.dec_level(self._opt.if_cont_line_level)
+                    if self.next_is_rc(CTokens.THEN, False):
+                        self.inc_level()
+                        self.handle_hidden_right()
+                        if self._opt.break_if_statement:
+                            self.ensure_newline()
+                        if self.parse_block():
+                            self.dec_level()
+                            return self.success()
 
         return self.failure()
 
@@ -753,6 +775,8 @@ cdef class IndentProcessor:
         if self.next_is_rc(CTokens.ELSETOK, False):
             self.inc_level()
             self.handle_hidden_right()
+            if self._opt.break_if_statement:
+                self.ensure_newline()
             if self.parse_block():
                 self.dec_level()
                 return self.success()
@@ -853,10 +877,7 @@ cdef class IndentProcessor:
         if self.next_is_rc(CTokens.VARARGS):
             return self.success()
 
-        self.failure_save()
         return self.success()
-
-        return self.failure()
 
     cdef bool parse_name_list(self):
         self.save()
@@ -1173,12 +1194,8 @@ cdef class IndentProcessor:
 
             if space_before_assign:
                 self.ws(n_space_before_assign)
-            elif self._opt.check_field_list:
-                self.ws(1)
 
             if self.next_is_rc(CTokens.ASSIGN):
-                if self._opt.check_field_list:
-                    self.ws(1)
                 result.has_assign = True
 
                 if self.parse_expr():
@@ -1186,18 +1203,13 @@ cdef class IndentProcessor:
                     return result
 
         self.failure_save()
-        if self.next_is_rc(CTokens.NAME) and \
-                (not self._opt.check_field_list or self.ws(1)):
+        if self.next_is_rc(CTokens.NAME):
             result.assign_position = self.get_column_of_last()
 
             if space_before_assign:
                 self.ws(n_space_before_assign)
-            elif self._opt.check_field_list:
-                self.ws(1)
 
             if self.next_is_rc(CTokens.ASSIGN):
-                if self._opt.check_field_list:
-                    self.ws(1)
                 result.has_assign = True
 
                 if self.parse_expr():
