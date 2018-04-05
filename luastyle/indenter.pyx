@@ -420,6 +420,16 @@ cdef class IndentProcessor:
                 column += len(t.text)
         return column
 
+    cdef str get_previous_comment(self):
+        cdef object t
+
+        for t in reversed(self._src):
+            if t.type == CTokens.LINE_COMMENT:
+                return t.text.lstrip('- ')
+            elif not t.type in self.HIDDEN_TOKEN:
+                break
+        return ""
+
     cdef bool next_in(self, types):
         return self._stream.LT(1).type in types
 
@@ -1102,17 +1112,26 @@ cdef class IndentProcessor:
         return self.failure()
 
     cdef bool parse_table_constructor(self, render_last_hidden=True):
+        cdef bool check_field_list
+        check_field_list = self._opt.check_field_list
+
+
+
         self.save()
         if self.next_is_rc(CTokens.OBRACE, False):  # do not render right hidden
             self.inc_level()
             self.handle_hidden_right()  # render hidden after new level
-            self.parse_field_list()
+
+            if check_field_list and (self.get_previous_comment() == "@luastyle.disable"):
+                check_field_list = False
+
+            self.parse_field_list(check_field_list)
             self.dec_level()
             if self.next_is_rc(CTokens.CBRACE, render_last_hidden):
                 return self.success()
         return self.failure()
 
-    cdef bool parse_field_list(self):
+    cdef bool parse_field_list(self, bool check_field_list):
         cdef int k
         cdef int max_position
         cdef ParseFieldResult field_result
@@ -1126,9 +1145,9 @@ cdef class IndentProcessor:
                     self.save()
                     # if check_field_list, no space is allowed between COMMA and key
                     if self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and \
-                            ((self._opt.check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
-                            (not self._opt.check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
-                            (not self._opt.check_field_list or self.ws(1)) and \
+                            ((check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
+                            (not check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
+                            (not check_field_list or self.ws(1)) and \
                             self.parse_field().success:
                         self.success()
                     else:
@@ -1174,9 +1193,9 @@ cdef class IndentProcessor:
 
                 if k < field_results.size():
                     if self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and \
-                            ((self._opt.check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
-                            (not self._opt.check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
-                            (not self._opt.check_field_list or self.ws(1)):
+                            ((check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
+                            (not check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
+                            (not check_field_list or self.ws(1)):
                         pass
 
                 k += 1

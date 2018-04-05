@@ -349,3 +349,25 @@ class IndentRuleTestCase(unittest.TestCase):
         formatted = indenter.IndentRule(options).apply(src)
         print(formatted)
         self.assertEqual(formatted, expected)
+
+    def test_disable_table_with_comment(self):
+        src = textwrap.dedent('''\
+            local t = {
+              -- @luastyle.disable
+              1,    2,  4,
+              8,    16, 32
+            }
+            ''')
+        expected = textwrap.dedent('''\
+            local t = {
+              -- @luastyle.disable
+              1,    2,  4,
+              8,    16, 32
+            }
+            ''')
+
+        options = indenter.IndentOptions()
+        options.check_field_list = True
+        formatted = indenter.IndentRule(options).apply(src)
+        print(formatted)
+        self.assertEqual(formatted, expected)
