@@ -772,14 +772,17 @@ cdef class IndentProcessor:
 
     cdef bool parse_else_stat(self):
         self.save()
-        if self.next_is_rc(CTokens.ELSETOK, False):
-            self.inc_level()
-            self.handle_hidden_right()
+        if self.next_is(CTokens.ELSETOK):
             if self._opt.break_if_statement:
                 self.ensure_newline()
-            if self.parse_block():
-                self.dec_level()
-                return self.success()
+            if self.next_is_rc(CTokens.ELSETOK, False):
+                self.inc_level()
+                self.handle_hidden_right()
+                if self._opt.break_if_statement:
+                    self.ensure_newline()
+                if self.parse_block():
+                    self.dec_level()
+                    return self.success()
 
         return self.failure()
 

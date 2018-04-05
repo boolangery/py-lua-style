@@ -324,7 +324,7 @@ class IndentRuleTestCase(unittest.TestCase):
     def test_break_if_statement_option(self):
         src = textwrap.dedent('''\
             if foo == nil then print(bar) elseif toto then else print(bar) end
-            if log then log:notice("done") end
+            if log then log:notice("done") else return failure() end
             ''')
         expected = textwrap.dedent('''\
             if foo == nil then
@@ -335,6 +335,8 @@ class IndentRuleTestCase(unittest.TestCase):
             end
             if log then
               log:notice("done")
+            else
+              return failure()
             end
             ''')
 
