@@ -45,7 +45,7 @@ cdef class IndentOptions:
         self.indent_char = ' '
         self.indent_with_tabs = False
         self.initial_indent_level = 0
-        self.close_on_lowest_level = True
+        self.close_on_lowest_level = False
 
         self.func_cont_line_level = 2
         self.break_if_statement = False
@@ -280,7 +280,7 @@ cdef class IndentProcessor:
             t.text = self._opt.indent_char * self.get_current_indent()
             self._src.append(t)
 
-        elif self._opt.close_on_lowest_level:
+        elif not self._opt.close_on_lowest_level:
             if token.type in self.CLOSING_TOKEN:
                 for prev in reversed(self._src):
                     if prev.type in self.CLOSING_TOKEN:

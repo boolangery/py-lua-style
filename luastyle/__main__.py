@@ -89,11 +89,11 @@ def main():
                            dest='indent_with_tabs',
                            help='indent with tabs, overrides -s and -c',
                            default=False)
-    style_group.add_option('--close-on-first-level',
-                           action='store_false',
+    style_group.add_option('--close-on-lowest-level',
+                           action='store_true',
                            dest='close_on_lowest_level',
-                           help='in several closing tokens, indent on first token level',
-                           default=True)
+                           help='if several closing tokens, indent on lowest token level',
+                           default=False)
 
     style_group.add_option('-F', '--func-cont-level',
                            metavar='N', type='int',
@@ -194,6 +194,7 @@ def main():
         indent_options.skip_semi_colon = options.skip_semi_colon or options.strict
         indent_options.if_cont_line_level = options.if_cont_line_level
         indent_options.break_if_statement = options.break_if_statement or options.strict
+        indent_options.close_on_lowest_level = options.close_on_lowest_level
 
     # build a filename list
     filenames = []
