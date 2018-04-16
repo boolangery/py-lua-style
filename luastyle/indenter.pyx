@@ -393,8 +393,11 @@ cdef class IndentProcessor:
         return False
 
     cdef bool next_in_rc_cont(self, types, hidden_right=True):
-        token = self._stream.LT(1)
+        cdef bool is_newline
+        cdef int space_count
 
+        is_newline = False
+        token = self._stream.LT(1)
         self._right_index = self._stream.index
 
         if token.type in types:
@@ -402,14 +405,32 @@ cdef class IndentProcessor:
             # pop hidden tokens
             hidden_stack = []
 
-            while self._src[-1].type in self.HIDDEN_TOKEN:
-                hidden_stack.insert(0, self._src.pop())
+            for t in reversed(self._src):
+                if t.type == CTokens.NEWLINE:
+                    is_newline = True
+                    hidden_stack.insert(0, self._src.pop())
+                elif t.type in self.HIDDEN_TOKEN:
+                    hidden_stack.insert(0, self._src.pop())
+                else:
+                    break
 
             self.render(token)
             self._src.extend(hidden_stack)
 
             if hidden_right:
-                self.handle_hidden_right(True)
+                self.handle_hidden_right(is_newline)
+
+            # merge last spaces
+            space_count = 0
+            for t in reversed(self._src):
+                if t.type == CTokens.SPACE:
+                    space_count += len(t.text)
+                    tok = self._src.pop()
+                else:
+                    break
+            if space_count > 0:
+                tok.text = ' ' * space_count
+                self._src.append(tok)
 
             return True
 
@@ -624,7 +645,7 @@ cdef class IndentProcessor:
             if not level_increased and on_several_lines and n_to_inc==number_of_tail-1:
                 self.inc_level()
                 level_increased = True
-                
+
             self.parse_tail()
 
             if level_increased:
@@ -1184,8 +1205,6 @@ cdef class IndentProcessor:
     cdef bool parse_table_constructor(self, render_last_hidden=True):
         cdef bool check_field_list
         check_field_list = self._opt.check_field_list
-
-
 
         self.save()
         if self.next_is_rc(CTokens.OBRACE, False):  # do not render right hidden

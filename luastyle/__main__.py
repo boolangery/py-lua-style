@@ -187,12 +187,12 @@ def main():
         indent_options.func_cont_line_level = options.func_cont_level
 
         indent_options.check_space_before_line_comment_text = options.check_space_before_line_comment_text or options.strict
-        indent_options.space_before_line_comment_text = options.space_before_line_comment_text or options.strict
+        indent_options.space_before_line_comment_text = options.space_before_line_comment_text
         indent_options.space_around_assign = options.space_around_assign
         indent_options.check_param_list = options.check_param_list or options.strict
         indent_options.check_field_list = options.check_field_list or options.strict
         indent_options.skip_semi_colon = options.skip_semi_colon or options.strict
-        indent_options.if_cont_line_level = options.if_cont_line_level
+        indent_options.if_cont_line_level = options.if_cont_line_level or options.strict
         indent_options.break_if_statement = options.break_if_statement or options.strict
         indent_options.close_on_lowest_level = options.close_on_lowest_level
 

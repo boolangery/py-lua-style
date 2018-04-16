@@ -263,10 +263,12 @@ class IndentRuleTestCase(unittest.TestCase):
         options = indenter.IndentOptions()
         options.check_field_list = False
         formatted = indenter.IndentRule(options).apply(src)
+        print(formatted)
         self.assertEqual(formatted, src)
 
         options.check_field_list = True
         formatted = indenter.IndentRule(options).apply(src)
+        print(formatted)
         self.assertEqual(formatted, expected)
 
     def test_skip_semi_colon_option(self):
