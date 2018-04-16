@@ -12,6 +12,12 @@ router:route('/toto',
 
 get('/foo/:bar')
   .put('/foo/:id')
+
+get('/foo/:bar')
+  :put('/foo/:id')
+
+get('/foo/:bar')
+  .put('/foo/:id')
   .post('/foo/:id',
     body_shape,
     on_error)

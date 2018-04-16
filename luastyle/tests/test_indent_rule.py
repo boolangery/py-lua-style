@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:\t%(message)s')
 class IndentRuleTestCase(unittest.TestCase):
     def setupTest(self, filePrefix, options=indenter.IndentOptions()):
         options.check_param_list = True
+        options.if_cont_line_level = 2
 
         self.maxDiff = None
         raw, exp = '', ''
@@ -292,22 +293,22 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def test_if_cont_line_level_option(self):
         src = textwrap.dedent('''\
-            if (foo and
-                bar) or
+            if foo and
+                bar or
                 (1 + 2) then
               print(bar)
-            elseif (a and
-                b) then
+            elseif a and
+                b then
               print(bar)
             end
             ''')
         expected = textwrap.dedent('''\
-            if (foo and
-                    bar) or
+            if foo and
+                    bar or
                     (1 + 2) then
               print(bar)
-            elseif (a and
-                    b) then
+            elseif a and
+                    b then
               print(bar)
             end
             ''')
@@ -371,3 +372,24 @@ class IndentRuleTestCase(unittest.TestCase):
         formatted = indenter.IndentRule(options).apply(src)
         print(formatted)
         self.assertEqual(formatted, expected)
+
+    #def test_smart_align_table(self):
+    #    src = textwrap.dedent('''\
+    #        local t = {
+    #          1,    2,  4,
+    #          8,    16, 32
+    #        }
+    #        ''')
+    #    expected = textwrap.dedent('''\
+    #        local t = {
+    #          -- @luastyle.disable
+    #          1,    2,  4,
+    #          8,    16, 32
+    #        }
+    #        ''')
+
+    #    options = indenter.IndentOptions()
+    #    options.check_field_list = True
+    #    formatted = indenter.IndentRule(options).apply(src)
+    #    print(formatted)
+    #    self.assertEqual(formatted, expected)

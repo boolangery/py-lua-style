@@ -57,7 +57,7 @@ cdef class IndentOptions:
         self.check_param_list = False
         self.check_field_list = False
         self.skip_semi_colon = False
-        self.if_cont_line_level = 2
+        self.if_cont_line_level = 0
         self.smart_table_align = False
 
 
@@ -148,6 +148,12 @@ cdef struct ParseFieldResult:
     int assign_position
 
 
+cdef struct ParseTailResult:
+    bool success
+    bool is_chainable
+    int last_line
+
+
 cdef class IndentProcessor:
     CLOSING_TOKEN = [
         CTokens.END,
@@ -179,11 +185,15 @@ cdef class IndentProcessor:
     cdef int _line_count
     cdef int _right_index
     cdef object _last_expr_type
+    cdef bool _is_tail_chainable
+    cdef int _tail_last_line
 
     cdef vector[int] _index_stack
     cdef vector[int] _src_index_stack
     cdef vector[int] _level_stack
     cdef vector[int] _right_index_stack
+    cdef vector[bool] _is_tail_chainable_stack
+    cdef vector[int] _tail_last_line_stack
     cdef object _last_tok_text_stack
 
     def __init__(self, options, stream):
@@ -279,6 +289,7 @@ cdef class IndentProcessor:
             t.type = -2  # indentation token
             t.text = self._opt.indent_char * self.get_current_indent()
             self._src.append(t)
+            self._line_count += 1
 
         elif not self._opt.close_on_lowest_level:
             if token.type in self.CLOSING_TOKEN:
@@ -560,61 +571,110 @@ cdef class IndentProcessor:
         return self.failure()
 
     cdef bool parse_var(self, bool is_stat=False):
+        cdef int number_of_chained_tail
         cdef int number_of_tail
         cdef int n
+        cdef int line
+        cdef int n_to_inc
+        cdef bool on_several_lines
+        cdef bool level_increased
+        cdef ParseTailResult tail
 
         self.save()
+        # first pass is used to count the number of tails and in case
+        # of no need to re-indent (chained call for example), return directly
+        on_several_lines = False
+        level_increased = False
+        number_of_chained_tail = 0
         number_of_tail = 0
+        n_to_inc = -1
+
         if self.parse_callee():
-            if self.parse_tail():
-                self.handle_hidden_right()
-                while self.parse_tail():
+            line = self._line_count
+            while True:
+                tail = self.parse_tail()
+                if tail.success:
                     self.handle_hidden_right()
+                    if tail.is_chainable:
+                        number_of_chained_tail += 1
+                    if not on_several_lines and (tail.last_line > line):
+                        on_several_lines = True
+                        n_to_inc = number_of_tail
                     number_of_tail += 1
-            if number_of_tail < 2:
+                else:
+                    break
+
+            # if there are less than 2 tail or not in a statement return
+            if number_of_tail < 2 or not is_stat:
                 return self.success()
 
 
+        if number_of_chained_tail > 1:
+            n_to_inc = 0
+
         self.failure_save()
         if self.parse_callee():
-            if is_stat:
-                self.inc_level()
-
-            for n in range(0, number_of_tail):
+            for n in range(0, number_of_tail-1):
+                if not level_increased and on_several_lines and n_to_inc==n:
+                    self.inc_level()
+                    level_increased = True
                 self.parse_tail()
                 self.handle_hidden_right()
+
+            if not level_increased and on_several_lines and n_to_inc==number_of_tail-1:
+                self.inc_level()
+                level_increased = True
+                
             self.parse_tail()
 
-            if is_stat:
+            if level_increased:
                 self.dec_level()
+
             self.handle_hidden_right()
             return self.success()
 
         return self.failure()
 
-    cdef bool parse_tail(self):
+    cdef ParseTailResult parse_tail(self):
+        cdef ParseTailResult result
+        result.is_chainable = True
+        result.success = True
+
         # do not render last hidden
         self.save()
         if self.next_is_rc(CTokens.DOT) and self.next_is_rc(CTokens.NAME, False):
-            return self.success()
+            result.last_line = self._line_count
+            self.success()
+            return result
 
         self.failure_save()
         if self.next_is_rc(CTokens.OBRACK) and self.parse_expr() and self.next_is_rc(CTokens.CBRACK, False):
-            return self.success()
+            result.last_line = self._line_count
+            self.success()
+            return result
 
         self.failure_save()
-        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME) and self.next_is_rc(CTokens.OPAR):
-            self.parse_expr_list(True)
-            if self.next_is_rc(CTokens.CPAR, False):
-                return self.success()
+        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME):
+            result.last_line = self._line_count
+            if self.next_is_rc(CTokens.OPAR):
+                self.parse_expr_list(True)
+                if self.next_is_rc(CTokens.CPAR, False):
+                    self.success()
+                    return result
 
         self.failure_save()
-        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME) and self.parse_table_constructor(False):
-            return self.success()
+        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME):
+            result.last_line = self._line_count
+            if self.parse_table_constructor(False):
+                self.success()
+                return result
 
         self.failure_save()
-        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME) and self.next_is_rc(CTokens.STRING, False):
-            return self.success()
+        if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME):
+            result.last_line = self._line_count
+            if self.next_is_rc(CTokens.STRING, False):
+                self.success()
+                return result
 
         self.failure_save()
         if self.next_is_rc(CTokens.OPAR, False):
@@ -623,17 +683,25 @@ cdef class IndentProcessor:
             self.parse_expr_list(False, True)
             self.dec_level()
             if self.next_is_rc(CTokens.CPAR, False):
-                return self.success()
+                result.is_chainable = False
+                self.success()
+                return result
 
         self.failure_save()
         if self.parse_table_constructor(False):
-            return self.success()
+            result.is_chainable = False
+            self.success()
+            return result
 
         self.failure_save()
         if self.next_is_rc(CTokens.STRING, False):
-            return self.success()
+            result.is_chainable = False
+            self.success()
+            return result
 
-        return self.failure()
+        result.success = False
+        self.failure()
+        return result
 
     cdef bool parse_expr_list(self, bool force_indent=False, bool force_no_indent=False):
         cdef bool several_expr
@@ -918,7 +986,9 @@ cdef class IndentProcessor:
     cdef bool parse_callee(self):
         self.save()
         if self.next_is_rc(CTokens.OPAR):
+            self.inc_level()
             if self.parse_expr():
+                self.dec_level()
                 if self.next_is_rc(CTokens.CPAR):
                     return self.success()
         self.failure()

@@ -10,6 +10,12 @@
     on_error)
   :done():bar{}
 
+  get('/foo/:bar')
+  .put('/foo/:id')
+
+  get('/foo/:bar')
+  :put('/foo/:id')
+
    get('/foo/:bar')
   .put('/foo/:id')
   .post('/foo/:id',

@@ -104,8 +104,8 @@ def main():
     style_group.add_option('-I', '--if-cont-level',
                            metavar='N', type='int',
                            dest='if_cont_line_level',
-                           help='if statement continuation line level [2]',
-                           default=2)
+                           help='if statement continuation line level [0]',
+                           default=0)
     style_group.add_option('-M', '--check-line-comment-text',
                            action='store_true',
                            dest='check_space_before_line_comment_text',
