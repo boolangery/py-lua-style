@@ -57,6 +57,10 @@ Usage: luastyle [options] filename
     -N N, --com-txt-space-size=N    If --check-line-comment-text is enabled, configure the number of spaces [1]
     -S, --skip-sem-colon            Skip all semi-colon after statements
     --break-if                      Break mono-line if statement
+    --force-call-spaces             Force spaces before opening parenthesis in function
+                                    call [0]
+    --call-spaces-size=N            If --force-call-spaces is enabled, configure the
+                                    number of spaces
     --strict                        Enable all features
 
 
@@ -240,3 +244,31 @@ Given:
     describe('must indent', function()
         done()
     end)
+
+Function call formatting options (--force-call-spaces, --call-spaces-size)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Given:
+
+.. code-block:: lua
+
+    build (foo)
+
+
+.. code-block:: console
+
+    $ luastyle --force-call-spaces source.lua
+
+
+.. code-block:: lua
+
+    build(foo)
+
+.. code-block:: console
+
+    $ luastyle --force-call-spaces --call-spaces-size=1 source.lua
+
+
+.. code-block:: lua
+
+    build (foo)

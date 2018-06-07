@@ -40,6 +40,11 @@ cdef class IndentOptions:
     cdef public int if_cont_line_level
     cdef public bool smart_table_align
 
+    # function checking
+    # Ensure x space after a function call
+    cdef public bool force_func_call_space_checking
+    cdef public int func_call_space_n
+
     def __init__(self):
         self.indent_size = 2
         self.indent_char = ' '
@@ -59,6 +64,9 @@ cdef class IndentOptions:
         self.skip_semi_colon = False
         self.if_cont_line_level = 0
         self.smart_table_align = False
+
+        self.force_func_call_space_checking = False
+        self.func_call_space_n = 0
 
 
 
@@ -676,6 +684,10 @@ cdef class IndentProcessor:
 
         self.failure_save()
         if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME):
+
+            if self._opt.force_func_call_space_checking:
+                self.ws(self._opt.func_call_space_n)
+
             result.last_line = self._line_count
             if self.next_is_rc(CTokens.OPAR):
                 self.parse_expr_list(True)
@@ -698,6 +710,10 @@ cdef class IndentProcessor:
                 return result
 
         self.failure_save()
+
+        if self._opt.force_func_call_space_checking:
+            self.ws(self._opt.func_call_space_n)
+
         if self.next_is_rc(CTokens.OPAR, False):
             self.inc_level()
             self.handle_hidden_right()

@@ -395,3 +395,9 @@ class IndentRuleTestCase(unittest.TestCase):
     #    formatted = indenter.IndentRule(options).apply(src)
     #    print(formatted)
     #    self.assertEqual(formatted, expected)
+
+    def test_func_par(self):
+        options = indenter.IndentOptions()
+        options.force_func_call_space_checking = True
+        options.func_call_space_n = 0
+        self.setupTest('func_par', options)

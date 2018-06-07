@@ -126,6 +126,16 @@ def main():
                            dest='break_if_statement',
                            help='break mono-line if statement',
                            default=False)
+    style_group.add_option('--force-call-spaces',
+                           action='store_true',
+                           dest='force_func_call_space_checking',
+                           help='force spaces before opening parenthesis in function call [0]',
+                           default=False)
+    style_group.add_option('--call-spaces-size',
+                           metavar='N', type='int',
+                           dest='func_call_space_n',
+                           help='if --force-call-spaces is enabled, configure the number of spaces',
+                           default=default.func_call_space_n)
 
 
     style_group.add_option('--strict',
@@ -195,6 +205,9 @@ def main():
         indent_options.if_cont_line_level = options.if_cont_line_level or options.strict
         indent_options.break_if_statement = options.break_if_statement or options.strict
         indent_options.close_on_lowest_level = options.close_on_lowest_level
+
+        indent_options.force_func_call_space_checking = options.force_func_call_space_checking
+        indent_options.func_call_space_n = options.func_call_space_n
 
     # build a filename list
     filenames = []
