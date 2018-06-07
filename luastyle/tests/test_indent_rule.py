@@ -27,20 +27,20 @@ class IndentRuleTestCase(unittest.TestCase):
 
     def check_lua_bytecode(self, raw, formatted):
         # create raw file
-        with open('raw.lua', 'w') as file:
+        with open(currdir + '/raw.lua', 'w') as file:
             file.write(raw)
 
         # create formatted file
-        with open('formatted.lua', 'w') as file:
+        with open(currdir + '/formatted.lua', 'w') as file:
             file.write(formatted)
 
         # compile files, strip
-        os.system("luac -s -o raw.out raw.lua")
-        os.system("luac -s -o formatted.out formatted.lua")
+        os.system('luac -s -o ' + currdir + '/raw.out ' + currdir +'/raw.lua')
+        os.system('luac -s -o ' + currdir + '/formatted.out ' + currdir + '/formatted.lua')
 
         # check diff
         # This command could have multiple commands separated by a new line \n
-        some_command = 'diff raw.out formatted.out'
+        some_command = 'diff ' + currdir + '/raw.out ' + currdir + '/formatted.out'
         p = subprocess.Popen(some_command, stdout=subprocess.PIPE, shell=True)
         (output, err) = p.communicate()
         # This makes the wait possible
@@ -52,10 +52,10 @@ class IndentRuleTestCase(unittest.TestCase):
         self.assertTrue(output == "", "lua bytecode differs !")
 
         # cleanup
-        os.remove('raw.lua')
-        os.remove('formatted.lua')
-        os.remove('raw.out')
-        os.remove('formatted.out')
+        os.remove(currdir + '/raw.lua')
+        os.remove(currdir + '/formatted.lua')
+        os.remove(currdir + '/raw.out')
+        os.remove(currdir + '/formatted.out')
 
 
     def test_no_indent(self):
