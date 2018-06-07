@@ -1,5 +1,6 @@
+  ::foo::
 do do
 ::my_label::
 end
-goto my_label
+goto foo
 end
