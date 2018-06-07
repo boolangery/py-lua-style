@@ -35,8 +35,14 @@ class IndentRuleTestCase(unittest.TestCase):
             file.write(formatted)
 
         # compile files, strip
-        os.system('luac -s -o ' + currdir + '/raw.out ' + currdir +'/raw.lua')
-        os.system('luac -s -o ' + currdir + '/formatted.out ' + currdir + '/formatted.lua')
+        if 'LUAC' in os.environ:
+            luac = '$LUAC'
+        else:
+            luac = 'luac'
+
+        os.system(luac + ' -s -o ' + currdir + '/raw.out ' + currdir +'/raw.lua')
+        os.system(luac + ' -s -o ' + currdir + '/formatted.out ' + currdir + '/formatted.lua')
+
 
         # check diff
         # This command could have multiple commands separated by a new line \n

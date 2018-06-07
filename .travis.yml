@@ -2,12 +2,12 @@ language: python
 
 env:
   matrix:
-    - LUA=lua5.2
+    - LUA=lua5.3 LUAC=luac5.3
 
-addons:
-  apt:
-    packages:
-      - lua5.2
+before_install:
+  - echo "deb http://deb.debian.org/debian jessie-backports main" | sudo tee -a /etc/apt/sources.list
+  - sudo apt-get update -qq
+  - sudo apt-get --allow-unauthenticated -t jessie-backports install lua5.3
 
 python:
   - "3.5"
