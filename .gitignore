@@ -1,0 +1,8 @@
+build
+.idea
+*~
+luastyle.egg-info
+luastyle/__pycache__
+luastyle/tests/__pycache__/
+*.cpp
+*.so
