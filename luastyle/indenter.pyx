@@ -1,6 +1,6 @@
 import logging
-from luaparser import ast, astnodes, asttokens
-from luaparser.asttokens import Tokens
+from luaparser import ast, astnodes
+from luaparser.builder import Tokens
 from enum import Enum
 from antlr4.Token import CommonToken
 # cython import
@@ -1373,7 +1373,7 @@ class IndentRule:
 
     def apply(self, input):
         # tokenize source code
-        stream = asttokens.get_token_stream(input)
+        stream = ast.get_token_stream(input)
 
         # indent
         processor = IndentProcessor(self._opt, stream)
