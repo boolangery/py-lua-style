@@ -6,6 +6,9 @@ import distutils.cmd
 import luastyle
 
 
+with open('README.rst') as file:
+    long_description = file.read()
+
 ext_modules = [
     Extension("luastyle.indenter",
     ["luastyle/indenter.pyx"],
@@ -56,6 +59,7 @@ setup(
     name='luastyle',
     version=luastyle.__version__,
     description='A lua code formatter in Python !',
+    long_description=long_description,
     url='https://github.com/boolangery/py-lua-formatter',
     download_url='https://github.com/boolangery/py-lua-style/archive/' + luastyle.__version__ + '.tar.gz',
     author='Eliott Dumeix',

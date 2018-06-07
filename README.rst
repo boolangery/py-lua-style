@@ -210,7 +210,7 @@ Given:
 
 
 
-Indent closing token which follow each other on the lowest level (--close-on-lowest-level )
+Indent closing token (--close-on-lowest-level )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Given:
