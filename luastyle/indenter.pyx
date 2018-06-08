@@ -22,6 +22,8 @@ cdef class IndentOptions:
     # continuation lines
     cdef public int func_cont_line_level
     cdef public bool break_if_statement
+    # break multiple statement on the same line
+    cdef public bool break_for_statement
 
     # space checking
     cdef public bool space_around_op
@@ -54,6 +56,7 @@ cdef class IndentOptions:
 
         self.func_cont_line_level = 2
         self.break_if_statement = False
+        self.break_for_statement = False
 
         self.space_around_op = False
         self.check_space_before_line_comment_text = False
@@ -781,13 +784,17 @@ cdef class IndentProcessor:
             return self.success()
         return self.failure()
 
-    cdef bool parse_do_block(self):
+    cdef bool parse_do_block(self, bool break_stat = False):
         self.save()
         if self.next_is_rc(CTokens.DO, False):
             self.inc_level()
             self.handle_hidden_right()
+            if break_stat:
+                self.ensure_newline()
             if self.parse_block():
                 self.dec_level()
+                if break_stat:
+                    self.ensure_newline()
                 if self.next_is_rc(CTokens.END):
                     return self.success()
         return self.failure()
@@ -918,7 +925,7 @@ cdef class IndentProcessor:
                     self.success()
                 else:
                     self.failure()
-                if self.parse_do_block():
+                if self.parse_do_block(self._opt.break_for_statement):
                     self.success()
                     return self.success()
 
@@ -926,7 +933,7 @@ cdef class IndentProcessor:
             if self.parse_name_list() and \
                     self.next_is_rc(CTokens.IN) and \
                     self.parse_expr_list(True) and \
-                    self.parse_do_block():
+                    self.parse_do_block(self._opt.break_for_statement):
                 self.success()
                 return self.success()
             self.failure()

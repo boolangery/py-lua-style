@@ -441,3 +441,8 @@ class IndentRuleTestCase(unittest.TestCase):
         options.force_func_call_space_checking = True
         options.func_call_space_n = 0
         self.setupTest('func_par', options)
+
+    def test_break_for(self):
+        options = indenter.IndentOptions()
+        options.break_for_statement = True
+        self.setupTest('break_for', options)
