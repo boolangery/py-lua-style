@@ -57,6 +57,8 @@ Usage: luastyle [options] filename
     -N N, --com-txt-space-size=N    If --check-line-comment-text is enabled, configure the number of spaces [1]
     -S, --skip-sem-colon            Skip all semi-colon after statements
     --break-if                      Break mono-line if statement
+    --break-while                   In while and repeat statement, ensure newline after
+                                    "do" or "repeat" and before "end" or "until" keyword
     --force-call-spaces             Force spaces before opening parenthesis in function
                                     call [0]
     --call-spaces-size=N            If --force-call-spaces is enabled, configure the

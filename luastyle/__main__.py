@@ -131,6 +131,12 @@ def main():
                            dest='break_for_statement',
                            help='in for statement, ensure newline after "do" and before "end" keyword',
                            default=default.break_for_statement)
+    style_group.add_option('--break-while',
+                           action='store_true',
+                           dest='break_while_statement',
+                           help='in while and repeat statement, ensure newline after "do" or "repeat" '
+                                'and before "end" or "until" keyword',
+                           default=default.break_while_statement)
     style_group.add_option('--force-call-spaces',
                            action='store_true',
                            dest='force_func_call_space_checking',
@@ -210,6 +216,7 @@ def main():
         indent_options.if_cont_line_level = options.if_cont_line_level or options.strict
         indent_options.break_if_statement = options.break_if_statement or options.strict
         indent_options.break_for_statement = options.break_for_statement or options.strict
+        indent_options.break_while_statement = options.break_while_statement or options.strict
         indent_options.close_on_lowest_level = options.close_on_lowest_level
 
         indent_options.force_func_call_space_checking = options.force_func_call_space_checking

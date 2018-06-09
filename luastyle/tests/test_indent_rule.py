@@ -446,3 +446,8 @@ class IndentRuleTestCase(unittest.TestCase):
         options = indenter.IndentOptions()
         options.break_for_statement = True
         self.setupTest('break_for', options)
+
+    def test_break_while(self):
+        options = indenter.IndentOptions()
+        options.break_while_statement = True
+        self.setupTest('break_while', options)
