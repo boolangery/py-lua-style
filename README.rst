@@ -59,6 +59,8 @@ Usage: luastyle [options] filename
     --break-if                      Break mono-line if statement
     --break-while                   In while and repeat statement, ensure newline after
                                     "do" or "repeat" and before "end" or "until" keyword
+    --break-all                     Enable --break-if --break-for and --break-while and
+                                    before "end" or "until" keyword
     --force-call-spaces             Force spaces before opening parenthesis in function
                                     call [0]
     --call-spaces-size=N            If --force-call-spaces is enabled, configure the

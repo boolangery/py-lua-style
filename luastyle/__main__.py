@@ -137,6 +137,12 @@ def main():
                            help='in while and repeat statement, ensure newline after "do" or "repeat" '
                                 'and before "end" or "until" keyword',
                            default=default.break_while_statement)
+    style_group.add_option('--break-all',
+                           action='store_true',
+                           dest='break_all_statement',
+                           help='enable --break-if --break-for and --break-while '
+                                'and before "end" or "until" keyword',
+                           default=False)
     style_group.add_option('--force-call-spaces',
                            action='store_true',
                            dest='force_func_call_space_checking',
@@ -214,9 +220,11 @@ def main():
         indent_options.check_field_list = options.check_field_list or options.strict
         indent_options.skip_semi_colon = options.skip_semi_colon or options.strict
         indent_options.if_cont_line_level = options.if_cont_line_level or options.strict
-        indent_options.break_if_statement = options.break_if_statement or options.strict
-        indent_options.break_for_statement = options.break_for_statement or options.strict
-        indent_options.break_while_statement = options.break_while_statement or options.strict
+        indent_options.break_if_statement = options.break_if_statement or options.break_all_statement or options.strict
+        indent_options.break_for_statement = options.break_for_statement or options.break_all_statement \
+                                             or options.strict
+        indent_options.break_while_statement = options.break_while_statement or options.break_all_statement \
+                                               or options.strict
         indent_options.close_on_lowest_level = options.close_on_lowest_level
 
         indent_options.force_func_call_space_checking = options.force_func_call_space_checking
