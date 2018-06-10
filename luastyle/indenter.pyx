@@ -145,17 +145,17 @@ cdef class IndentOptions:
         options.func_call_space_n                   = attributes['func_call_space_n']
         return options
 
-class Expr(Enum):
-    OR      = 1
-    AND     = 2
-    REL     = 3
-    CONCAT  = 4
-    ADD     = 5
-    MULT    = 6
-    BITWISE = 7
-    UNARY   = 8
-    POW     = 9
-    ATOM    = 10
+cdef enum Expr:
+    EXPR_OR      = 1
+    EXPR_AND     = 2
+    EXPR_REL     = 3
+    EXPR_CONCAT  = 4
+    EXPR_ADD     = 5
+    EXPR_MULT    = 6
+    EXPR_BITWISE = 7
+    EXPR_UNARY   = 8
+    EXPR_POW     = 9
+    EXPR_ATOM    = 10
 
 
 cdef enum CTokens:
@@ -836,7 +836,7 @@ cdef class IndentProcessor:
                         self.failure()
                         break
 
-            if (not several_expr and self._last_expr_type == Expr.ATOM) or force_no_indent:
+            if (not several_expr and self._last_expr_type == Expr.EXPR_ATOM) or force_no_indent:
                 return self.success()  # just one expr and atom, no indent
         # restore and re-indent
         self.failure_save()
@@ -1129,7 +1129,7 @@ cdef class IndentProcessor:
                         self.next_is_rc(CTokens.OR) and \
                         (not self._opt.space_around_op or self.ws(1)) and \
                         self.parse_and_expr():
-                    self._last_expr_type = Expr.OR
+                    self._last_expr_type = Expr.EXPR_OR
                     self.success()
                 else:
                     self.failure()
@@ -1146,7 +1146,7 @@ cdef class IndentProcessor:
                         self.next_is_rc(CTokens.AND) and \
                         (not self._opt.space_around_op or self.ws(1)) \
                         and self.parse_rel_expr():
-                    self._last_expr_type = Expr.AND
+                    self._last_expr_type = Expr.EXPR_AND
                     self.success()
                 else:
                     self.failure()
@@ -1162,7 +1162,7 @@ cdef class IndentProcessor:
                     self.next_in_rc(self.REL_OPERATORS) and \
                     (not self._opt.space_around_op or self.ws(1)) and \
                     self.parse_concat_expr():
-                self._last_expr_type = Expr.REL
+                self._last_expr_type = Expr.EXPR_REL
                 self.success()
             else:
                 self.failure()
@@ -1178,7 +1178,7 @@ cdef class IndentProcessor:
                         self.next_is_rc(CTokens.CONCAT) and \
                         (not self._opt.space_around_op or
                          self.ws(1)) and self.parse_add_expr():
-                    self._last_expr_type = Expr.CONCAT
+                    self._last_expr_type = Expr.EXPR_CONCAT
                     self.success()
                 else:
                     self.failure()
@@ -1195,7 +1195,7 @@ cdef class IndentProcessor:
                         self.next_in_rc([CTokens.ADD, CTokens.MINUS]) and \
                         (not self._opt.space_around_op or self.ws(1)) and \
                         self.parse_mult_expr():
-                    self._last_expr_type = Expr.ADD
+                    self._last_expr_type = Expr.EXPR_ADD
                     self.success()
                 else:
                     self.failure()
@@ -1212,7 +1212,7 @@ cdef class IndentProcessor:
                                    CTokens.DIV,
                                    CTokens.MOD,
                                    CTokens.FLOOR]) and (not self._opt.space_around_op or self.ws(1)) and self.parse_bitwise_expr():
-                    self._last_expr_type = Expr.MULT
+                    self._last_expr_type = Expr.EXPR_MULT
                     self.success()
                 else:
                     self.failure()
@@ -1230,7 +1230,7 @@ cdef class IndentProcessor:
                                  CTokens.BITNOT,
                                  CTokens.BITRSHIFT,
                                  CTokens.BITRLEFT]) and self.parse_unary_expr():
-                    self._last_expr_type = Expr.BITWISE
+                    self._last_expr_type = Expr.EXPR_BITWISE
                     self.success()
                 else:
                     self.failure()
@@ -1241,22 +1241,22 @@ cdef class IndentProcessor:
     cdef bool parse_unary_expr(self):
         self.save()
         if self.next_is_rc(CTokens.MINUS) and self.parse_unary_expr():
-            self._last_expr_type = Expr.UNARY
+            self._last_expr_type = Expr.EXPR_UNARY
             return self.success()
 
         self.failure_save()
         if self.next_is_rc(CTokens.LENGTH) and self.parse_pow_expr():
-            self._last_expr_type = Expr.UNARY
+            self._last_expr_type = Expr.EXPR_UNARY
             return self.success()
 
         self.failure_save()
         if self.next_is_rc(CTokens.NOT) and self.parse_unary_expr():
-            self._last_expr_type = Expr.UNARY
+            self._last_expr_type = Expr.EXPR_UNARY
             return self.success()
 
         self.failure_save()
         if self.next_is_rc(CTokens.BITNOT) and self.parse_unary_expr():
-            self._last_expr_type = Expr.UNARY
+            self._last_expr_type = Expr.EXPR_UNARY
             return self.success()
 
         self.failure_save()
@@ -1271,7 +1271,7 @@ cdef class IndentProcessor:
             while True:
                 self.save()
                 if self.next_is_rc(CTokens.POW) and self.parse_atom():
-                    self._last_expr_type = Expr.POW
+                    self._last_expr_type = Expr.EXPR_POW
                     self.success()
                 else:
                     self.failure()
@@ -1290,7 +1290,7 @@ cdef class IndentProcessor:
                                  CTokens.NIL,
                                  CTokens.TRUE,
                                  CTokens.FALSE]):
-            self._last_expr_type = Expr.ATOM
+            self._last_expr_type = Expr.EXPR_ATOM
             return self.success()
         return self.failure()
 
