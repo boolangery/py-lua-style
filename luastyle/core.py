@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-import json
+
 import concurrent.futures
 from luastyle.indenter import IndentRule, IndentOptions
 
@@ -9,18 +9,13 @@ from luastyle.indenter import IndentRule, IndentOptions
 class Configuration:
     def load(self, filepath):
         with open(filepath) as json_data_file:
-            data = json.load(json_data_file)
-        options = IndentOptions()
-        options.__dict__ = data
+            content = json_data_file.read()
+        options = IndentOptions.from_json(content)
         return options
 
     def generate_default(self, filepath):
         with open(filepath, 'w') as json_data_file:
-            json_data_file.write(
-                json.dumps(IndentOptions().__dict__,
-                           sort_keys=True,
-                           indent=4,
-                           separators=(',', ': ')))
+            json_data_file.write(IndentOptions().to_json())
         print('Config. file generated in: ' + os.path.abspath(filepath))
 
 

@@ -6,6 +6,7 @@ from antlr4.Token import CommonToken
 # cython import
 from libcpp cimport bool
 from libcpp.vector cimport vector
+import json
 
 
 
@@ -50,6 +51,7 @@ cdef class IndentOptions:
 
     def __init__(self):
         self.indent_size = 2
+
         self.indent_char = ' '
         self.indent_with_tabs = False
         self.initial_indent_level = 0
@@ -73,7 +75,75 @@ cdef class IndentOptions:
         self.force_func_call_space_checking = False
         self.func_call_space_n = 0
 
+    def to_json(self):
+        """
+            Convert this cython object to json.
+            (no __dict__ attribute)
+        """
+        attributes = {
+            'indent_size':                          self.indent_size,
 
+            'indent_char':                          self.indent_char,
+            'indent_with_tabs':                     self.indent_with_tabs,
+            'initial_indent_level':                 self.initial_indent_level,
+            'close_on_lowest_level':                self.close_on_lowest_level,
+
+            'func_cont_line_level':                 self.func_cont_line_level,
+            'break_if_statement':                   self.break_if_statement,
+            'break_for_statement':                  self.break_for_statement,
+            'break_while_statement':                self.break_while_statement,
+
+            'space_around_op':                      self.space_around_op,
+            'check_space_before_line_comment_text': self.check_space_before_line_comment_text,
+            'space_before_line_comment_text':       self.space_before_line_comment_text,
+            'space_around_assign':                  self.space_around_assign,
+            'check_param_list':                     self.check_param_list ,
+            'check_field_list':                     self.check_field_list,
+            'skip_semi_colon':                      self.skip_semi_colon,
+            'if_cont_line_level':                   self.if_cont_line_level,
+            'smart_table_align':                    self.smart_table_align,
+
+            'force_func_call_space_checking':       self.force_func_call_space_checking,
+            'func_call_space_n':                    self.func_call_space_n,
+        }
+        return json.dumps(attributes,
+                          sort_keys=True,
+                          indent=4,
+                          separators=(',', ': '))
+
+    @staticmethod
+    def from_json(raw_json):
+        """
+            Convert from json to this cython object.
+            (no __dict__ attribute)
+        """
+        attributes = json.loads(raw_json)
+        options = IndentOptions()
+        options.indent_size                         = attributes['indent_size']
+
+        options.indent_char                         = attributes['indent_char']
+        options.indent_with_tabs                    = attributes['indent_with_tabs']
+        options.initial_indent_level                = attributes['initial_indent_level']
+        options.close_on_lowest_level               = attributes['close_on_lowest_level']
+
+        options.func_cont_line_level                = attributes['func_cont_line_level']
+        options.break_if_statement                  = attributes['break_if_statement']
+        options.break_for_statement                 = attributes['break_for_statement']
+        options.break_while_statement               = attributes['break_while_statement']
+
+        options.space_around_op                     = attributes['space_around_op']
+        options.check_space_before_line_comment_text= attributes['check_space_before_line_comment_text']
+        options.space_before_line_comment_text      = attributes['space_before_line_comment_text']
+        options.space_around_assign                 = attributes['space_around_assign']
+        options.check_param_list                    = attributes['check_param_list']
+        options.check_field_list                    = attributes['check_field_list']
+        options.skip_semi_colon                     = attributes['skip_semi_colon']
+        options.if_cont_line_level                  = attributes['if_cont_line_level']
+        options.smart_table_align                   = attributes['smart_table_align']
+
+        options.force_func_call_space_checking      = attributes['force_func_call_space_checking']
+        options.func_call_space_n                   = attributes['func_call_space_n']
+        return options
 
 class Expr(Enum):
     OR      = 1

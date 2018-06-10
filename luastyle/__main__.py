@@ -196,7 +196,7 @@ def main():
             except Exception as e:
                 abort('Error while reading ' + filepath + ': ' + str(e))
     # then if no file found in default location
-    if indent_options is not None and options.config_file:
+    if indent_options is None and options.config_file:
         if os.path.exists(options.config_file):
             try:
                 indent_options = Configuration().load(options.config_file)
