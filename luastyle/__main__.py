@@ -227,7 +227,7 @@ def main():
                                                or options.strict
         indent_options.close_on_lowest_level = options.close_on_lowest_level
 
-        indent_options.force_func_call_space_checking = options.force_func_call_space_checking
+        indent_options.force_func_call_space_checking = options.force_func_call_space_checking or options.strict
         indent_options.func_call_space_n = options.func_call_space_n
 
     # build a filename list
