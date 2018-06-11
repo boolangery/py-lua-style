@@ -9,10 +9,6 @@ import luastyle
 with open('README.rst') as file:
     long_description = file.read()
 
-ext_modules = [
-    Extension("luastyle.indenter",
-    ["luastyle/indenter.pyx"],
-    language='c++')]
 
 pyx_ext_modules = [Extension("luastyle.indenter",
                              sources=["luastyle/indenter.pyx"],
