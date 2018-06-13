@@ -146,12 +146,13 @@ def main():
     style_group.add_option('--force-call-spaces',
                            action='store_true',
                            dest='force_func_call_space_checking',
-                           help='force spaces before opening parenthesis in function call [0]',
+                           help='force spaces before opening parenthesis in function call',
                            default=False)
     style_group.add_option('--call-spaces-size',
                            metavar='N', type='int',
                            dest='func_call_space_n',
-                           help='if --force-call-spaces is enabled, configure the number of spaces',
+                           help='if --force-call-spaces is enabled, configure the number of spaces [' +
+                           str(default.func_call_space_n) + ']',
                            default=default.func_call_space_n)
 
 
