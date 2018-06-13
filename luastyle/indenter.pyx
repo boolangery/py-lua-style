@@ -108,15 +108,6 @@ cdef class IndentOptions:
 
 
 cdef class IndentProcessor:
-
-    HIDDEN_TOKEN = [
-        CTokens.SHEBANG,
-        CTokens.LINE_COMMENT,
-        CTokens.COMMENT,
-        CTokens.NEWLINE,
-        CTokens.SPACE,
-        -2]
-
     HIDDEN_TOKEN_WITHOUT_COMMENTS = [
         CTokens.SHEBANG,
         CTokens.NEWLINE,
@@ -133,9 +124,16 @@ cdef class IndentProcessor:
 
     def __init__(self, options, stream):
         # constants init
-        self.CLOSING_TOKEN[CTokens.END] = True
-        self.CLOSING_TOKEN[CTokens.CBRACE] = True
-        self.CLOSING_TOKEN[CTokens.CPAR] = True
+        self.CLOSING_TOKEN.insert(CTokens.END)
+        self.CLOSING_TOKEN.insert(CTokens.CBRACE)
+        self.CLOSING_TOKEN.insert(CTokens.CPAR)
+
+        self.HIDDEN_TOKEN.insert(CTokens.SHEBANG)
+        self.HIDDEN_TOKEN.insert(CTokens.LINE_COMMENT)
+        self.HIDDEN_TOKEN.insert(CTokens.COMMENT)
+        self.HIDDEN_TOKEN.insert(CTokens.NEWLINE)
+        self.HIDDEN_TOKEN.insert(CTokens.SPACE)
+        self.HIDDEN_TOKEN.insert(-2)
 
         self._stream = stream
         # contains a list of CommonTokens
@@ -349,7 +347,7 @@ cdef class IndentProcessor:
                 if t.type == CTokens.NEWLINE:
                     is_newline = True
                     hidden_stack.insert(0, self._src.pop())
-                elif t.type in self.HIDDEN_TOKEN:
+                elif self.HIDDEN_TOKEN.find(t.type) != self.HIDDEN_TOKEN.end():
                     hidden_stack.insert(0, self._src.pop())
                 else:
                     break
@@ -377,7 +375,7 @@ cdef class IndentProcessor:
         return False
 
     cdef void strip_hidden(self):
-        while self._src[-1].type in self.HIDDEN_TOKEN:
+        while self.HIDDEN_TOKEN.find(self._src[-1].type) != self.HIDDEN_TOKEN.end():
             self._src.pop()
 
     cdef int get_column_of_last(self):
@@ -398,7 +396,7 @@ cdef class IndentProcessor:
         for t in reversed(self._src):
             if t.type == CTokens.LINE_COMMENT:
                 return t
-            elif not t.type in self.HIDDEN_TOKEN:
+            elif self.HIDDEN_TOKEN.find(t.type) == self.HIDDEN_TOKEN.end():
                 break
         return None
 
@@ -408,7 +406,7 @@ cdef class IndentProcessor:
         for t in reversed(self._src):
             if t.type == CTokens.LINE_COMMENT:
                 return t.text.lstrip('- ')
-            elif not t.type in self.HIDDEN_TOKEN:
+            elif self.HIDDEN_TOKEN.find(t.type) == self.HIDDEN_TOKEN.end():
                 break
         return ""
 

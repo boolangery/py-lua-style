@@ -3,7 +3,7 @@ from luaparser import ast, astnodes
 from luaparser.builder import Tokens
 from libcpp cimport bool
 from libcpp.vector cimport vector
-from libcpp.unordered_map cimport unordered_map
+from libcpp.unordered_set cimport unordered_set
 import json
 
 
@@ -160,7 +160,9 @@ cdef class IndentProcessor:
     cdef vector[int] _tail_last_line_stack
     cdef object _last_tok_text_stack
 
-    cdef unordered_map[int, bool] CLOSING_TOKEN
+    cdef unordered_set[int] CLOSING_TOKEN
+    cdef unordered_set[int] HIDDEN_TOKEN
+    #cdef unordered_set[int] REL_OPERATORS
 
 
     cdef inline void inc_level(self, int n=1)
