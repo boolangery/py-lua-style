@@ -479,18 +479,15 @@ cdef class IndentProcessor:
     cdef bool parse_stat(self):
         self.save()
 
+        # check first most common statements
         if self.parse_assignment() \
                 or self.parse_var(True) \
                 or self.parse_do_block() \
                 or self.parse_while_stat() \
-                or self.parse_repeat_stat() \
                 or self.parse_local() \
-                or self.parse_goto_stat() \
                 or self.parse_if_stat() \
                 or self.parse_for_stat() \
-                or self.parse_function() \
-                or self.parse_label() \
-                or (self.next_is(CTokens.BREAK) and self.next_is_rc(CTokens.BREAK)):
+                or self.parse_function():
             # re-indent right hidden token after leaving the statement
             self.strip_hidden()
             self.handle_hidden_right()
@@ -530,6 +527,15 @@ cdef class IndentProcessor:
                     self._src.append(amb_comment)
                     self.ensure_newline()
 
+            return self.success()
+
+        elif (self.next_is(CTokens.BREAK) and self.next_is_rc(CTokens.BREAK)) \
+                or self.parse_label() \
+                or self.parse_repeat_stat() \
+                or self.parse_goto_stat():
+            # re-indent right hidden token after leaving the statement
+            self.strip_hidden()
+            self.handle_hidden_right()
             return self.success()
 
         return self.failure()
