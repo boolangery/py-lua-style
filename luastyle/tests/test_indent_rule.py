@@ -3,7 +3,7 @@ import os
 import textwrap
 from luastyle import indenter
 import logging
-import subprocess
+from luastyle.core import check_lua_bytecode
 
 currdir = os.path.dirname(__file__)
 
@@ -23,46 +23,7 @@ class IndentRuleTestCase(unittest.TestCase):
         formatted = indenter.IndentRule(options).apply(raw)
         print(formatted)
         self.assertEqual(formatted, exp)
-        self.check_lua_bytecode(raw, formatted)
-
-    def check_lua_bytecode(self, raw, formatted):
-        # create raw file
-        with open(currdir + '/raw.lua', 'w') as file:
-            file.write(raw)
-
-        # create formatted file
-        with open(currdir + '/formatted.lua', 'w') as file:
-            file.write(formatted)
-
-        # compile files, strip
-        if 'LUAC' in os.environ:
-            luac = '$LUAC'
-        else:
-            luac = 'luac'
-
-        os.system(luac + ' -s -o ' + currdir + '/raw.out ' + currdir +'/raw.lua')
-        os.system(luac + ' -s -o ' + currdir + '/formatted.out ' + currdir + '/formatted.lua')
-
-
-        # check diff
-        # This command could have multiple commands separated by a new line \n
-        some_command = 'diff ' + currdir + '/raw.out ' + currdir + '/formatted.out'
-        p = subprocess.Popen(some_command, stdout=subprocess.PIPE, shell=True)
-        (output, err) = p.communicate()
-        # This makes the wait possible
-        p_status = p.wait()
-
-        output = output.decode("utf-8")
-
-        self.assertEqual(0, p_status, "diff error")
-        self.assertTrue(output == "", "lua bytecode differs !")
-
-        # cleanup
-        os.remove(currdir + '/raw.lua')
-        os.remove(currdir + '/formatted.lua')
-        os.remove(currdir + '/raw.out')
-        os.remove(currdir + '/formatted.out')
-
+        self.assertTrue(check_lua_bytecode(raw, formatted))
 
     def test_no_indent(self):
         self.setupTest('no_indent')

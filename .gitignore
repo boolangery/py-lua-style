@@ -6,3 +6,6 @@ luastyle/__pycache__
 luastyle/tests/__pycache__/
 *.cpp
 *.so
+MANIFEST
+dist/
+luastyle/__init__.pyc
