@@ -56,7 +56,7 @@ setup(
     version=luastyle.__version__,
     description='A lua code formatter in Python !',
     long_description=long_description,
-    url='https://github.com/boolangery/py-lua-formatter',
+    url='https://github.com/boolangery/py-lua-style',
     download_url='https://github.com/boolangery/py-lua-style/archive/' + luastyle.__version__ + '.tar.gz',
     author='Eliott Dumeix',
     author_email='eliott.dumeix@gmail.com',
