@@ -49,6 +49,11 @@ def main():
                          dest='jobs',
                          help='number of parallel jobs in recursive mode',
                          default=4)
+    cli_group.add_option('-C', '--check-bytecode',
+                         action='store_true',
+                         dest='check_bytecode',
+                         help='check lua bytecode with luac, $LUAC can also be set to use a specific compiler',
+                         default=False)
     parser.add_option_group(cli_group)
 
     # Style options:
@@ -243,7 +248,10 @@ def main():
                     filenames.append(filepath)
 
     # process files
-    FilesProcessor(options.replace, options.jobs, indent_options).run(filenames)
+    FilesProcessor(options.replace,
+                   options.jobs,
+                   options.check_bytecode,
+                   indent_options).run(filenames)
 
 
 if __name__ == '__main__':
