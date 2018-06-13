@@ -108,10 +108,6 @@ cdef class IndentOptions:
 
 
 cdef class IndentProcessor:
-    CLOSING_TOKEN = [
-        CTokens.END,
-        CTokens.CBRACE,
-        CTokens.CPAR]
 
     HIDDEN_TOKEN = [
         CTokens.SHEBANG,
@@ -136,6 +132,11 @@ cdef class IndentProcessor:
         CTokens.EQ]
 
     def __init__(self, options, stream):
+        # constants init
+        self.CLOSING_TOKEN[CTokens.END] = True
+        self.CLOSING_TOKEN[CTokens.CBRACE] = True
+        self.CLOSING_TOKEN[CTokens.CPAR] = True
+
         self._stream = stream
         # contains a list of CommonTokens
         self._src = []
@@ -231,9 +232,9 @@ cdef class IndentProcessor:
             self._line_count += 1
 
         elif not self._opt.close_on_lowest_level:
-            if token.type in self.CLOSING_TOKEN:
+            if self.CLOSING_TOKEN.find(token.type) != self.CLOSING_TOKEN.end():
                 for prev in reversed(self._src):
-                    if prev.type in self.CLOSING_TOKEN:
+                    if self.CLOSING_TOKEN.find(prev.type) != self.CLOSING_TOKEN.end():
                         pass  # continue
                     elif prev.type == -2:
                         # set on current level
