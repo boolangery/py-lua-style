@@ -176,7 +176,7 @@ cdef class IndentProcessor:
 
     cdef inline bool success(self)
 
-    cdef bool failure(self)
+    cdef inline bool failure(self)
 
     cdef inline void failure_save(self)
 
@@ -184,7 +184,7 @@ cdef class IndentProcessor:
 
     cdef bool next_is_c(self, int type, hidden_right=?)
 
-    cdef inline bool next_is(self, int type)
+    cdef bool next_is(self, int type, int offset=?)
 
     cdef bool next_in_rc(self, types, bool hidden_right=?)
 
@@ -194,9 +194,11 @@ cdef class IndentProcessor:
 
     cdef int get_column_of_last(self)
 
-    cdef str get_previous_comment(self)
+    cdef object get_previous_comment(self)
 
-    cdef bool next_in(self, types)
+    cdef str get_previous_comment_str(self)
+
+    cdef inline bool next_in(self, types)
 
     cdef void handle_hidden_left(self)
 

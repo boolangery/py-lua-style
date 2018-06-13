@@ -412,3 +412,8 @@ class IndentRuleTestCase(unittest.TestCase):
         options = indenter.IndentOptions()
         options.break_while_statement = True
         self.setupTest('break_while', options)
+
+    def test_ambiguous_with_skip_semi_colon_option(self):
+        options = indenter.IndentOptions()
+        options.skip_semi_colon = True
+        self.setupTest('ambiguous', options)

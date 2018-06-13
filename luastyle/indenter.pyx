@@ -121,6 +121,12 @@ cdef class IndentProcessor:
         CTokens.SPACE,
         -2]
 
+    HIDDEN_TOKEN_WITHOUT_COMMENTS = [
+        CTokens.SHEBANG,
+        CTokens.NEWLINE,
+        CTokens.SPACE,
+        -2]
+
     REL_OPERATORS = [
         CTokens.LT,
         CTokens.GT,
@@ -153,10 +159,10 @@ cdef class IndentProcessor:
         t.text = self._opt.indent_char * self.get_current_indent()
         self._src.append(t)
 
-    cdef inline void inc_level(self, int n=1):
+    cdef void inc_level(self, int n=1):
         self._level += n
 
-    cdef inline void dec_level(self, int n=1):
+    cdef void dec_level(self, int n=1):
         self._level -= n
         #logging.debug('<%s dec level, level=%d', self._debug_level * 2 * '*', self._level)
 
@@ -198,7 +204,7 @@ cdef class IndentProcessor:
         for t in reversed(self._src):
             if t.type == CTokens.NEWLINE:
                 return True
-            elif not t.type in self.HIDDEN_TOKEN:
+            elif not t.type in self.HIDDEN_TOKEN_WITHOUT_COMMENTS:
                 break
 
         t = CommonToken()
@@ -208,7 +214,7 @@ cdef class IndentProcessor:
 
         return True
 
-    cdef inline void save(self):
+    cdef void save(self):
         #logging.debug('trying ' + inspect.stack()[1][3])
         self._index_stack.push_back(self._stream.index)
         self._src_index_stack.push_back(len(self._src))
@@ -238,7 +244,7 @@ cdef class IndentProcessor:
         self._src.append(token)
         #logging.debug('render %s <--------------', token)
 
-    cdef inline bool success(self):
+    cdef bool success(self):
         self._index_stack.pop_back()
         self._src_index_stack.pop_back()
         self._level_stack.pop_back()
@@ -265,7 +271,7 @@ cdef class IndentProcessor:
         self._src[-1].text = self._last_tok_text_stack.pop()
         return False
 
-    cdef inline void failure_save(self):
+    cdef void failure_save(self):
         self.failure()
         self.save()
 
@@ -304,8 +310,8 @@ cdef class IndentProcessor:
 
         return False
 
-    cdef inline bool next_is(self, int type):
-        return self._stream.LT(1).type == type
+    cdef bool next_is(self, int type, int offset=0):
+        return self._stream.LT(1 + offset).type == type
 
     cdef bool next_in_rc(self, types, bool hidden_right=True):
         cdef object token
@@ -385,7 +391,17 @@ cdef class IndentProcessor:
                 column += len(t.text)
         return column
 
-    cdef str get_previous_comment(self):
+    cdef object get_previous_comment(self):
+        cdef object t
+
+        for t in reversed(self._src):
+            if t.type == CTokens.LINE_COMMENT:
+                return t
+            elif not t.type in self.HIDDEN_TOKEN:
+                break
+        return None
+
+    cdef str get_previous_comment_str(self):
         cdef object t
 
         for t in reversed(self._src):
@@ -474,13 +490,48 @@ cdef class IndentProcessor:
                 or self.parse_for_stat() \
                 or self.parse_function() \
                 or self.parse_label() \
-                or (self.next_is(CTokens.BREAK) and self.next_is_rc(CTokens.BREAK)) \
-                or (self._opt.skip_semi_colon and self.next_is_c(CTokens.SEMCOL)) \
-                or (not self._opt.skip_semi_colon and self.next_is_rc(CTokens.SEMCOL)):
+                or (self.next_is(CTokens.BREAK) and self.next_is_rc(CTokens.BREAK)):
             # re-indent right hidden token after leaving the statement
             self.strip_hidden()
             self.handle_hidden_right()
             return self.success()
+
+        # handle the ambiguous syntax
+        # http://lua-users.org/lists/lua-l/2009-08/msg00543.html
+        # example:
+        #   a = b + c;
+        #   (print or io.write)('foo')
+        elif self.next_is(CTokens.SEMCOL):
+            ambiguous_syntax = False
+            if not self._opt.skip_semi_colon:
+                self.next_is_rc(CTokens.SEMCOL)
+            else:
+                if self.next_is(CTokens.OPAR, 1):
+                    # ambiguous syntax detected, keep semi-colon
+                    self.next_is_rc(CTokens.SEMCOL)
+                    ambiguous_syntax = True
+                else:
+                    self.next_is_c(CTokens.SEMCOL)
+
+            self.strip_hidden()
+            self.handle_hidden_right()
+
+            if ambiguous_syntax:
+                # append a preventive comment
+                comment = self.get_previous_comment()
+
+                if comment is not None:
+                    comment.text += ' / ambiguous syntax, previous semicolon is needed'
+                else:
+                    self.ws(1)
+                    amb_comment = CommonToken()
+                    amb_comment.type = CTokens.LINE_COMMENT
+                    amb_comment.text = '-- ambiguous syntax, previous semicolon is needed'
+                    self._src.append(amb_comment)
+                    self.ensure_newline()
+
+            return self.success()
+
         return self.failure()
 
     cdef bool parse_ret_stat(self):
@@ -1160,7 +1211,7 @@ cdef class IndentProcessor:
             self.inc_level()
             self.handle_hidden_right()  # render hidden after new level
 
-            if check_field_list and (self.get_previous_comment() == "@luastyle.disable"):
+            if check_field_list and (self.get_previous_comment_str() == "@luastyle.disable"):
                 check_field_list = False
 
             self.parse_field_list(check_field_list)
