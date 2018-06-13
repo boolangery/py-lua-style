@@ -9,46 +9,7 @@ from libcpp.vector cimport vector
 import json
 
 
-
 cdef class IndentOptions:
-    """Define indentation options"""
-    cdef public int indent_size
-    cdef public str indent_char
-    cdef public bool indent_with_tabs
-    cdef public int initial_indent_level
-    # in case of several closing token on the same line ('}', ')', 'end')
-    # indent all line of last element level
-    cdef public bool close_on_lowest_level
-
-    # continuation lines
-    cdef public int func_cont_line_level
-    cdef public bool break_if_statement
-    # break multiple statement on the same line
-    cdef public bool break_for_statement
-    cdef public bool break_while_statement
-
-    # space checking
-    cdef public bool space_around_op
-    cdef public bool check_space_before_line_comment_text
-    cdef public int space_before_line_comment_text
-
-    # Ensure padding spaces around assignment operator '='
-    cdef public bool space_around_assign
-    # Ensure padding space after a comma in a param list
-    cdef public bool check_param_list
-    # Ensure padding space after a comma in a field list (table)
-    cdef public bool check_field_list
-    # Skip semi-colon at the end of all statements
-    cdef public bool skip_semi_colon
-    # Indentation level of if/elseif continuation lines
-    cdef public int if_cont_line_level
-    cdef public bool smart_table_align
-
-    # function checking
-    # Ensure x space after a function call
-    cdef public bool force_func_call_space_checking
-    cdef public int func_call_space_n
-
     def __init__(self):
         self.indent_size = 2
 
@@ -145,97 +106,6 @@ cdef class IndentOptions:
         options.func_call_space_n                   = attributes['func_call_space_n']
         return options
 
-cdef enum Expr:
-    EXPR_OR      = 1
-    EXPR_AND     = 2
-    EXPR_REL     = 3
-    EXPR_CONCAT  = 4
-    EXPR_ADD     = 5
-    EXPR_MULT    = 6
-    EXPR_BITWISE = 7
-    EXPR_UNARY   = 8
-    EXPR_POW     = 9
-    EXPR_ATOM    = 10
-
-
-cdef enum CTokens:
-    AND = 1
-    BREAK = 2
-    DO = 3
-    ELSETOK = 4
-    ELSEIF = 5
-    END = 6
-    FALSE = 7
-    FOR = 8
-    FUNCTION = 9
-    GOTO = 10
-    IFTOK = 11
-    IN = 12
-    LOCAL = 13
-    NIL = 14
-    NOT = 15
-    OR = 16
-    REPEAT = 17
-    RETURN = 18
-    THEN = 19
-    TRUE = 20
-    UNTIL = 21
-    WHILE = 22
-    ADD = 23
-    MINUS = 24
-    MULT = 25
-    DIV = 26
-    FLOOR = 27
-    MOD = 28
-    POW = 29
-    LENGTH = 30
-    EQ = 31
-    NEQ = 32
-    LTEQ = 33
-    GTEQ = 34
-    LT = 35
-    GT = 36
-    ASSIGN = 37
-    BITAND = 38
-    BITOR = 39
-    BITNOT = 40
-    BITRSHIFT = 41
-    BITRLEFT = 42
-    OPAR = 43
-    CPAR = 44
-    OBRACE = 45
-    CBRACE = 46
-    OBRACK = 47
-    CBRACK = 48
-    COLCOL = 49
-    COL = 50
-    COMMA = 51
-    VARARGS = 52
-    CONCAT = 53
-    DOT = 54
-    SEMCOL = 55
-    NAME = 56
-    NUMBER = 57
-    STRING = 58
-    COMMENT = 59
-    LINE_COMMENT = 60
-    SPACE = 61
-    NEWLINE = 62
-    SHEBANG = 63
-    LongBracket = 64
-
-
-cdef struct ParseFieldResult:
-    bool success
-    bool has_assign
-    int assign_position
-
-
-cdef struct ParseTailResult:
-    bool success
-    bool is_chainable
-    int last_line
-
 
 cdef class IndentProcessor:
     CLOSING_TOKEN = [
@@ -258,26 +128,6 @@ cdef class IndentProcessor:
         CTokens.GTEQ,
         CTokens.NEQ,
         CTokens.EQ]
-
-    cdef object _stream
-
-    cdef object _src
-    cdef IndentOptions _opt
-
-    cdef int _level
-    cdef int _line_count
-    cdef int _right_index
-    cdef object _last_expr_type
-    cdef bool _is_tail_chainable
-    cdef int _tail_last_line
-
-    cdef vector[int] _index_stack
-    cdef vector[int] _src_index_stack
-    cdef vector[int] _level_stack
-    cdef vector[int] _right_index_stack
-    cdef vector[bool] _is_tail_chainable_stack
-    cdef vector[int] _tail_last_line_stack
-    cdef object _last_tok_text_stack
 
     def __init__(self, options, stream):
         self._stream = stream
@@ -310,7 +160,7 @@ cdef class IndentProcessor:
         self._level -= n
         #logging.debug('<%s dec level, level=%d', self._debug_level * 2 * '*', self._level)
 
-    def process(self):
+    cpdef process(self):
         if self._opt.indent_with_tabs:
             self._opt.indent_char = '\t'
 

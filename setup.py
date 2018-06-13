@@ -11,7 +11,7 @@ with open('README.rst') as file:
 
 
 pyx_ext_modules = [Extension("luastyle.indenter",
-                             sources=["luastyle/indenter.pyx"],
+                             sources=["luastyle/indenter.pyx", "luastyle/indenter.pxd"],
                              language='c++')]
 
 ext_modules = [Extension('luastyle.indenter',
