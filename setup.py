@@ -16,7 +16,7 @@ pyx_ext_modules = [Extension("luastyle.indenter",
 
 ext_modules = [Extension('luastyle.indenter',
                          sources=['luastyle/indenter.cpp'],
-                         libraries=[],
+                         libraries=["stdc++"],
                          include_dirs=[],
                          define_macros=[])]
 
