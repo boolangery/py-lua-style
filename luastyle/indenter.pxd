@@ -191,9 +191,9 @@ cdef class IndentProcessor:
 
     cdef bool next_is(self, int type, int offset=?)
 
-    cdef bool next_in_rc(self, types, bool hidden_right=?)
+    cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=?)
 
-    cdef bool next_in_rc_cont(self, types, hidden_right=?)
+    cdef bool next_in_rc_cont(self, unordered_set[int] types, hidden_right=?)
 
     cdef void strip_hidden(self)
 

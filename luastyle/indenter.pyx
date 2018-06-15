@@ -312,7 +312,7 @@ cdef class IndentProcessor:
     cdef bool next_is(self, int type, int offset=0):
         return self._stream.LT(1 + offset).type == type
 
-    cdef bool next_in_rc(self, types, bool hidden_right=True):
+    cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=True):
         cdef object token
         cdef int tok_type
 
@@ -320,7 +320,7 @@ cdef class IndentProcessor:
         tok_type = token.type
         self._right_index = self._stream.index
 
-        if tok_type in types:
+        if types.find(tok_type) != types.end():
             self._stream.consume()
             self.render(token)
             if hidden_right:
@@ -330,7 +330,7 @@ cdef class IndentProcessor:
 
         return False
 
-    cdef bool next_in_rc_cont(self, types, hidden_right=True):
+    cdef bool next_in_rc_cont(self, unordered_set[int] types, hidden_right=True):
         cdef bool is_newline
         cdef int space_count
 
@@ -338,7 +338,7 @@ cdef class IndentProcessor:
         token = self._stream.LT(1)
         self._right_index = self._stream.index
 
-        if token.type in types:
+        if types.find(token.type) != types.end():
             self._stream.consume()
             # pop hidden tokens
             hidden_stack = []
@@ -458,26 +458,22 @@ cdef class IndentProcessor:
                     is_newline = False
 
     cdef bool parse_chunk(self):
-        self.save()
         self._stream.LT(1)
         self.handle_hidden_left()
         if self.parse_block():
             token = self._stream.LT(1)
             if token.type == -1:
                 # do not consume EOF
-                return self.success()
-        return self.failure()
+                return True
+        return False
 
     cdef bool parse_block(self):
-        self.save()
         while self.parse_stat():
             pass
         self.parse_ret_stat()
-        return self.success()
+        return True
 
     cdef bool parse_stat(self):
-        self.save()
-
         # check first most common statements
         if self.parse_assignment() \
                 or self.parse_var(True) \
@@ -490,7 +486,7 @@ cdef class IndentProcessor:
             # re-indent right hidden token after leaving the statement
             self.strip_hidden()
             self.handle_hidden_right()
-            return self.success()
+            return True
 
         # handle the ambiguous syntax
         # http://lua-users.org/lists/lua-l/2009-08/msg00543.html
@@ -526,7 +522,7 @@ cdef class IndentProcessor:
                     self._src.append(amb_comment)
                     self.ensure_newline()
 
-            return self.success()
+            return True
 
         elif (self.next_is(CTokens.BREAK) and self.next_is_rc(CTokens.BREAK)) \
                 or self.parse_label() \
@@ -535,9 +531,9 @@ cdef class IndentProcessor:
             # re-indent right hidden token after leaving the statement
             self.strip_hidden()
             self.handle_hidden_right()
-            return self.success()
+            return True
 
-        return self.failure()
+        return False
 
     cdef bool parse_ret_stat(self):
         self.save()
