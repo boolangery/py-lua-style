@@ -41,6 +41,9 @@ Usage: luastyle [options] filename
     --type=EXT                      File extension to indent (can be repeated) [lua]
     -d, --debug                     Enable debugging messages
     -j N, --jobs=N                  Number of parallel jobs in recursive mode
+    -C, --check-bytecode            Check lua bytecode with luac, $LUAC can also be set to
+                                    use a specific compiler
+
 
   Beautifier Options:
     -a, --space-around-assign       Ensure one space before and after assign op "="
