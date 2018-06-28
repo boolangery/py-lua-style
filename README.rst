@@ -28,7 +28,7 @@ Options
 
 These are the command-line flags:
 
-Usage: luastyle [options] filename
+Usage: luastyle [options] file_or_dir1 file_or_dir2 ...
 
 .. code-block::
 

@@ -15,7 +15,7 @@ def abort(msg):
 
 def main():
     # parse options:
-    parser = OptionParser(usage='usage: %prog [options] file|directory',
+    parser = OptionParser(usage='usage: %prog [options] file_or_dir1 file_or_dir2 ...',
                           version='%prog ' + luastyle.__version__)
     cli_group = OptionGroup(parser, "CLI Options")
     cli_group.add_option('-i', '--in-place',
@@ -238,14 +238,15 @@ def main():
 
     # build a filename list
     filenames = []
-    if not os.path.isdir(args[0]):
-        filenames.append(args[0])
-    else:
-        for root, subdirs, files in os.walk(args[0]):
-            for filename in files:
-                if not options.extensions or filename.endswith(tuple(options.extensions)):
-                    filepath = os.path.join(root, filename)
-                    filenames.append(filepath)
+    for fn_or_fp in args:
+        if not os.path.isdir(fn_or_fp):
+            filenames.append(fn_or_fp)
+        else:
+            for root, subdirs, files in os.walk(fn_or_fp):
+                for filename in files:
+                    if not options.extensions or filename.endswith(tuple(options.extensions)):
+                        filepath = os.path.join(root, filename)
+                        filenames.append(filepath)
 
     # process files
     FilesProcessor(options.replace,
