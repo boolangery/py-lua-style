@@ -666,8 +666,11 @@ cdef class IndentProcessor:
                 self.ws(self._opt.func_call_space_n)
 
             result.last_line = self._line_count
-            if self.next_is_rc(CTokens.OPAR):
-                self.parse_expr_list(True)
+            if self.next_is_rc(CTokens.OPAR, False):
+                self.inc_level()
+                self.handle_hidden_right()
+                self.parse_expr_list(False, True) # force no indentation
+                self.dec_level()
                 if self.next_is_rc(CTokens.CPAR, False):
                     self.success()
                     return result
