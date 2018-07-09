@@ -932,6 +932,7 @@ cdef class IndentProcessor:
 
             self.failure_save()
             if self.parse_func_body():
+                self.success()
                 return self.success()
             self.failure()
 

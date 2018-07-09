@@ -417,3 +417,9 @@ class IndentRuleTestCase(unittest.TestCase):
         options = indenter.IndentOptions()
         options.skip_semi_colon = True
         self.setupTest('ambiguous', options)
+
+    # #########################################################################
+    # Continuous Integration Tests                                            #
+    # #########################################################################
+    def test_cont_int_1(self):
+        self.setupTest('cont_int_1')
