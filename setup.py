@@ -42,7 +42,7 @@ class CythonizeCommand(distutils.cmd.Command):
 
   def run(self):
     import Cython.Build
-    Cython.Build.cythonize(pyx_ext_modules, verbose=True)
+    Cython.Build.cythonize(pyx_ext_modules, verbose=True, language_level=3, annotate=True)
 
 
 class Sdist(sdist):

@@ -1,12 +1,10 @@
-import logging
-from luaparser import ast, astnodes
-from luaparser.builder import Tokens
-from enum import Enum
+from luaparser import ast
 from antlr4.Token import CommonToken
 # cython import
 from libcpp cimport bool
 from libcpp.vector cimport vector
 import json
+from cython.operator cimport dereference as deref, predecrement as dec, preincrement as inc
 
 
 cdef class IndentOptions:
@@ -137,7 +135,6 @@ cdef class IndentProcessor:
 
         self._stream = stream
         # contains a list of CommonTokens
-        self._src = []
         self._opt = options
         # current level
         self._level = 0
@@ -146,17 +143,13 @@ cdef class IndentProcessor:
         self._last_expr_type = None
 
         # following stack are used to backup values
-        self._index_stack = []
-        self._src_index_stack = []
-        self._level_stack = []
-        self._right_index_stack = []
-        self._last_tok_text_stack = []
 
         # append the first indentation token
-        t = CommonToken()
+        cdef CCommonToken t
         t.type = -2  # indentation type
-        t.text = self._opt.indent_char * self.get_current_indent()
-        self._src.append(t)
+        text = self._opt.indent_char * self.get_current_indent()
+        t.text = text.encode('UTF-8')
+        self._src.push_back(t)
 
     cdef void inc_level(self, int n=1):
         self._level += n
@@ -165,82 +158,92 @@ cdef class IndentProcessor:
         self._level -= n
         #logging.debug('<%s dec level, level=%d', self._debug_level * 2 * '*', self._level)
 
-    cpdef process(self):
+    cpdef str process(self):
         if self._opt.indent_with_tabs:
             self._opt.indent_char = '\t'
 
         if not self.parse_chunk():
             raise Exception("Expecting a chunk")
 
-        src = ''.join([t.text for t in self._src])
+        src = ''.join([t.text.decode('UTF-8') for t in self._src])
         return src
 
     cdef bool ws(self, int size):
-        cdef object last
         cdef bool new_line
+        cdef CCommonToken* last
+        cdef CCommonToken token
 
-        last = self._src[-1]
-        new_line = (len(self._src) > 1) and ((self._src[-2].type == CTokens.NEWLINE) or (self._src[-1].type == CTokens.NEWLINE))
+        last = &self._src.back()
+        new_line = (<int>self._src.size() > 1) and ((self._src.at(self._src.size() - 2).type == CTokens.NEWLINE) or (self._src.back().type == CTokens.NEWLINE))
 
         if not new_line:
             if last.type == CTokens.SPACE:
-                last.text = ' ' * size
+                text = text = ' ' * size
+                last.text = text.encode('UTF-8')
             else:
-                t = CommonToken()
-                t.type = CTokens.SPACE  # indentation token
-                t.text = ' ' * size
-                self.render(t)
+                token.type = CTokens.SPACE  # indentation token
+                text = text = ' ' * size
+                token.text = text.encode('UTF-8')
+                self.render(token)
 
         return True
 
     cdef bool ensure_newline(self):
         cdef object t
+        cdef vector[CCommonToken].reverse_iterator it = self._src.rbegin()
+        cdef CCommonToken token
 
         # pop trailing space
-        if self._src[-1].type == CTokens.SPACE:
-            self._src.pop()
+        if self._src.back().type == CTokens.SPACE:
+            self._src.pop_back()
 
-        for t in reversed(self._src):
-            if t.type == CTokens.NEWLINE:
+        while it != self._src.rend():
+            if deref(it).type == CTokens.NEWLINE:
                 return True
-            elif not t.type in self.HIDDEN_TOKEN_WITHOUT_COMMENTS:
+            elif not deref(it).type in self.HIDDEN_TOKEN_WITHOUT_COMMENTS:
                 break
+            inc(it)
 
-        t = CommonToken()
-        t.type = CTokens.NEWLINE
-        t.text = '\n'
-        self.render(t)
+        token.type = CTokens.NEWLINE
+        token.text = b'\n'
+        self.render(token)
 
         return True
 
     cdef void save(self):
         #logging.debug('trying ' + inspect.stack()[1][3])
         self._index_stack.push_back(self._stream.index)
-        self._src_index_stack.push_back(len(self._src))
+        self._src_index_stack.push_back(<int>self._src.size())
         self._level_stack.push_back(self._level)
         self._right_index_stack.push_back(self._right_index)
-        self._last_tok_text_stack.append(self._src[-1].text)
+        self._last_tok_text_stack.push_back(self._src.back().text)
 
-    cdef void render(self, object token):
-        if self._src and self._src[-1].type == CTokens.NEWLINE:
-            t = CommonToken()
+    cdef void render(self, CCommonToken token):
+        cdef CCommonToken t
+        cdef vector[CCommonToken].reverse_iterator it
+
+        if not self._src.empty() and self._src.back().type == CTokens.NEWLINE:
             t.type = -2  # indentation token
-            t.text = self._opt.indent_char * self.get_current_indent()
-            self._src.append(t)
+            text = self._opt.indent_char * self.get_current_indent()
+            t.text = text.encode('UTF-8')
+            self._src.push_back(t)
             self._line_count += 1
 
         elif not self._opt.close_on_lowest_level:
             if self.CLOSING_TOKEN.find(token.type) != self.CLOSING_TOKEN.end():
-                for prev in reversed(self._src):
-                    if self.CLOSING_TOKEN.find(prev.type) != self.CLOSING_TOKEN.end():
+                it = self._src.rbegin()
+                while it != self._src.rend():
+                    if self.CLOSING_TOKEN.find(deref(it).type) != self.CLOSING_TOKEN.end():
                         pass  # continue
-                    elif prev.type == -2:
+                    elif deref(it).type == -2:
                         # set on current level
-                        prev.text = self._opt.indent_char * self.get_current_indent()
+                        text = self._opt.indent_char * self.get_current_indent()
+                        deref(it).text = text.encode('UTF-8')
                     else:
                         break
+                    inc(it)
 
-        self._src.append(token)
+        self._src.push_back(token)
         #logging.debug('render %s <--------------', token)
 
     cdef bool success(self):
@@ -248,26 +251,30 @@ cdef class IndentProcessor:
         self._src_index_stack.pop_back()
         self._level_stack.pop_back()
         self._right_index_stack.pop_back()
-        self._last_tok_text_stack.pop()
+        self._last_tok_text_stack.pop_back()
         #logging.debug('success ' + inspect.stack()[1][3])
         return True
 
     cdef bool failure(self):
         cdef int n_elem_to_delete
+        cdef CCommonToken* token
 
         #logging.debug('failure ' + inspect.stack()[1][3])
         self._stream.seek(self._index_stack.back())
         self._index_stack.pop_back()
 
-        n_elem_to_delete = len(self._src) - self._src_index_stack.back()
+        n_elem_to_delete = <int>self._src.size() - self._src_index_stack.back()
         self._src_index_stack.pop_back()
         if n_elem_to_delete >= 1:
-            del self._src[-n_elem_to_delete:]
+            if self._src.size() - n_elem_to_delete > 0:
+                self._src.resize(self._src.size() - n_elem_to_delete);
         self._level = self._level_stack.back()
         self._level_stack.pop_back()
         self._right_index = self._right_index_stack.back()
         self._right_index_stack.pop_back()
-        self._src[-1].text = self._last_tok_text_stack.pop()
+        token = &self._src.back()
+        token.text = self._last_tok_text_stack.back()
+        self._last_tok_text_stack.pop_back()
         return False
 
     cdef void failure_save(self):
@@ -276,14 +283,17 @@ cdef class IndentProcessor:
 
     cdef bool next_is_rc(self, int type, hidden_right=True):
         """rc is for render and consume token."""
-        cdef object token
+        cdef object py_tok
+        cdef CCommonToken token
         cdef int toktype
 
-        token = self._stream.LT(1)
-        toktype = token.type
+        py_tok = self._stream.LT(1)
+        token.type = py_tok.type
+        token.text = py_tok.text.encode('UTF-8')
+
         self._right_index = self._stream.index
 
-        if toktype == type:
+        if token.type == type:
             self._stream.consume()
             self.render(token)
             if hidden_right:
@@ -294,14 +304,17 @@ cdef class IndentProcessor:
 
     cdef bool next_is_c(self, int type, hidden_right=True):
         """c is for consume token."""
-        cdef object token
+        cdef object py_tok
+        cdef CCommonToken token
         cdef int toktype
 
-        token = self._stream.LT(1)
-        toktype = token.type
+        py_tok = self._stream.LT(1)
+        token.type = py_tok.type
+        token.text = py_tok.text.encode('UTF-8')
+
         self._right_index = self._stream.index
 
-        if toktype == type:
+        if token.type == type:
             self._stream.consume()
             if hidden_right:
                 self.handle_hidden_right()
@@ -313,14 +326,16 @@ cdef class IndentProcessor:
         return self._stream.LT(1 + offset).type == type
 
     cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=True):
-        cdef object token
+        cdef object py_tok
+        cdef CCommonToken token
         cdef int tok_type
 
-        token = self._stream.LT(1)
-        tok_type = token.type
+        py_tok = self._stream.LT(1)
+        token.type = py_tok.type
+        token.text = py_tok.text.encode('UTF-8')
         self._right_index = self._stream.index
 
-        if types.find(tok_type) != types.end():
+        if types.find(token.type) != types.end():
             self._stream.consume()
             self.render(token)
             if hidden_right:
@@ -330,9 +345,13 @@ cdef class IndentProcessor:
 
         return False
 
-    cdef bool next_in_rc_cont(self, unordered_set[int] types, hidden_right=True):
+    cdef bool next_in_rc_cont(self, unordered_set[int] types, bool hidden_right=True):
         cdef bool is_newline
         cdef int space_count
+        cdef object token
+        cdef CCommonToken tok
+        cdef vector[CCommonToken] hidden_stack
+        cdef vector[CCommonToken].reverse_iterator it
 
         is_newline = False
         token = self._stream.LT(1)
@@ -341,107 +360,139 @@ cdef class IndentProcessor:
         if types.find(token.type) != types.end():
             self._stream.consume()
             # pop hidden tokens
-            hidden_stack = []
 
-            for t in reversed(self._src):
-                if t.type == CTokens.NEWLINE:
+            it = self._src.rbegin()
+            while it != self._src.rend():
+                if deref(it).type == CTokens.NEWLINE:
                     is_newline = True
-                    hidden_stack.insert(0, self._src.pop())
-                elif self.HIDDEN_TOKEN.find(t.type) != self.HIDDEN_TOKEN.end():
-                    hidden_stack.insert(0, self._src.pop())
+                    hidden_stack.insert(hidden_stack.begin(), self._src.back())
+                    self._src.pop_back()
+                elif self.HIDDEN_TOKEN.find(deref(it).type) != self.HIDDEN_TOKEN.end():
+                    hidden_stack.insert(hidden_stack.begin(), self._src.back())
+                    self._src.pop_back()
                 else:
                     break
+                inc(it)
 
-            self.render(token)
-            self._src.extend(hidden_stack)
+            tok.type = token.type
+            tok.text = token.text.encode('UTF-8')
+            self.render(tok)
+            self._src.insert(self._src.end(), hidden_stack.begin(), hidden_stack.end())
 
             if hidden_right:
                 self.handle_hidden_right(is_newline)
 
             # merge last spaces
             space_count = 0
-            for t in reversed(self._src):
-                if t.type == CTokens.SPACE:
-                    space_count += len(t.text)
-                    tok = self._src.pop()
+
+            it = self._src.rbegin()
+            while it != self._src.rend():
+                if deref(it).type == CTokens.SPACE:
+                    space_count += deref(it).text.size()
+                    tok = self._src.back()
+                    self._src.pop_back()
                 else:
                     break
+                inc(it)
+
             if space_count > 0:
-                tok.text = ' ' * space_count
-                self._src.append(tok)
+                text = ' ' * space_count
+                tok.text = text.encode('UTF-8')
+                self._src.push_back(tok)
 
             return True
 
         return False
 
     cdef void strip_hidden(self):
-        while self.HIDDEN_TOKEN.find(self._src[-1].type) != self.HIDDEN_TOKEN.end():
-            self._src.pop()
+        while not self._src.empty() and self.HIDDEN_TOKEN.find(self._src.back().type) != self.HIDDEN_TOKEN.end():
+            self._src.pop_back()
 
     cdef int get_column_of_last(self):
-        cdef int column
+        cdef int column = 0
         cdef object t
-        column = 0
+        cdef vector[CCommonToken].reverse_iterator it = self._src.rbegin()
 
-        for t in reversed(self._src):
-            if t.type == CTokens.NEWLINE:
+        while it != self._src.rend():
+            if deref(it).type == CTokens.NEWLINE:
                 break
             else:
-                column += len(t.text)
+                column += deref(it).text.size()
+            inc(it)
+
         return column
 
-    cdef object get_previous_comment(self):
+    cdef CCommonToken* get_previous_comment(self):
         cdef object t
+        cdef vector[CCommonToken].reverse_iterator it = self._src.rbegin()
 
-        for t in reversed(self._src):
-            if t.type == CTokens.LINE_COMMENT:
-                return t
-            elif self.HIDDEN_TOKEN.find(t.type) == self.HIDDEN_TOKEN.end():
+        while it != self._src.rend():
+            if deref(it).type == CTokens.LINE_COMMENT:
+                return &deref(it)
+            elif self.HIDDEN_TOKEN.find(deref(it).type) == self.HIDDEN_TOKEN.end():
                 break
-        return None
+            inc(it)
+
+        return NULL
 
     cdef str get_previous_comment_str(self):
         cdef object t
+        cdef vector[CCommonToken].reverse_iterator it = self._src.rbegin()
 
-        for t in reversed(self._src):
-            if t.type == CTokens.LINE_COMMENT:
-                return t.text.lstrip('- ')
-            elif self.HIDDEN_TOKEN.find(t.type) == self.HIDDEN_TOKEN.end():
+        while it != self._src.rend():
+            if deref(it).type == CTokens.LINE_COMMENT:
+                return deref(it).text.decode('UTF-8').lstrip('- ')
+            elif self.HIDDEN_TOKEN.find(deref(it).type) == self.HIDDEN_TOKEN.end():
                 break
+            inc(it)
+
         return ""
 
     cdef bool next_in(self, types):
         return self._stream.LT(1).type in types
 
     cdef void handle_hidden_left(self):
-        is_newline = len(self._src) == 1  # empty token
+        cdef CCommonToken token
+
+        is_newline = self._src.size() == 1  # empty token
         tokens = self._stream.getHiddenTokensToLeft(self._stream.index)
         if tokens:
             for t in tokens:
                 if t.type == CTokens.NEWLINE:
-                    self.render(t)
+                    token.type = t.type
+                    token.text = t.text.encode('UTF-8')
+                    self.render(token)
                     is_newline = True
                 elif t.type == CTokens.SPACE:
                     if not is_newline:
-                        self.render(t)
+                        token.type = t.type
+                        token.text = t.text.encode('UTF-8')
+                        self.render(token)
                 else:
-                    self.render(t)
+                    token.type = t.type
+                    token.text = t.text.encode('UTF-8')
+                    self.render(token)
                     is_newline = False
 
     cdef void handle_hidden_right(self, bool is_newline=False):
         cdef object t
+        cdef CCommonToken token
 
         tokens = self._stream.getHiddenTokensToRight(self._right_index)
         if tokens:
             for t in tokens:
                 # TODO: replace with a map
                 if t.type == CTokens.NEWLINE:
-                    self.render(t)
+                    token.type = t.type
+                    token.text = t.text.encode('UTF-8')
+                    self.render(token)
                     is_newline = True
                 elif t.type == CTokens.SPACE:
                     if not is_newline:
-                        if self._src:  # do not begin with a space
-                            self.render(t)
+                        if not self._src.empty():  # do not begin with a space
+                            token.type = t.type
+                            token.text = t.text.encode('UTF-8')
+                            self.render(token)
                 elif self._opt.check_space_before_line_comment_text and \
                         t.type == CTokens.LINE_COMMENT:
                     # check for space after comment opening
@@ -450,11 +501,14 @@ cdef class IndentProcessor:
                     dash_count = len(comment_text) - len(comment_witout_dash)
                     comment_text = comment_witout_dash.lstrip()
                     comment_text = '-' * dash_count + self._opt.space_before_line_comment_text * ' ' + comment_text
-                    t.text = comment_text
-                    self.render(t)
+                    token.type = t.type
+                    token.text = comment_text.encode('UTF-8')
+                    self.render(token)
                     is_newline = False
                 else:
-                    self.render(t)
+                    token.type = t.type
+                    token.text = t.text.encode('UTF-8')
+                    self.render(token)
                     is_newline = False
 
     cdef bool parse_chunk(self):
@@ -474,6 +528,9 @@ cdef class IndentProcessor:
         return True
 
     cdef bool parse_stat(self):
+        cdef CCommonToken amb_comment
+        cdef CCommonToken* comment
+
         # check first most common statements
         if self.parse_assignment() \
                 or self.parse_var(True) \
@@ -512,14 +569,13 @@ cdef class IndentProcessor:
                 # append a preventive comment
                 comment = self.get_previous_comment()
 
-                if comment is not None:
-                    comment.text += ' / ambiguous syntax, previous semicolon is needed'
+                if comment:
+                    comment.text += string(b' / ambiguous syntax, previous semicolon is needed')
                 else:
                     self.ws(1)
-                    amb_comment = CommonToken()
                     amb_comment.type = CTokens.LINE_COMMENT
-                    amb_comment.text = '-- ambiguous syntax, previous semicolon is needed'
-                    self._src.append(amb_comment)
+                    amb_comment.text = string(b'-- ambiguous syntax, previous semicolon is needed')
+                    self._src.push_back(amb_comment)
                     self.ensure_newline()
 
             return True
@@ -1270,11 +1326,11 @@ cdef class IndentProcessor:
                 else:
                     break
 
-            if field_results.size() == 0:
+            if <int>field_results.size() == 0:
                 return self.failure()
 
             # condition to enable smart indent
-            align_table = (field_results.size() > 3) and (max_position < 35)
+            align_table = (<int>field_results.size() > 3) and (max_position < 35)
 
             # pass to smart indent with previous results
             self.failure_save()
@@ -1285,7 +1341,7 @@ cdef class IndentProcessor:
                 else:
                     self.parse_field()
 
-                if k < field_results.size():
+                if k < <int>field_results.size():
                     if self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and \
                             ((check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
                             (not check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \

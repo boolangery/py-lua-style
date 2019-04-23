@@ -4,6 +4,7 @@ from luaparser.builder import Tokens
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
+from libcpp.string cimport string
 import json
 
 
@@ -139,10 +140,15 @@ cdef struct ParseTailResult:
     int last_line
 
 
+cdef struct CCommonToken:
+    int type
+    string text
+
+
 cdef class IndentProcessor:
     cdef object _stream
 
-    cdef object _src
+    cdef vector[CCommonToken] _src
     cdef IndentOptions _opt
 
     cdef int _level
@@ -158,7 +164,7 @@ cdef class IndentProcessor:
     cdef vector[int] _right_index_stack
     cdef vector[bool] _is_tail_chainable_stack
     cdef vector[int] _tail_last_line_stack
-    cdef object _last_tok_text_stack
+    cdef vector[string] _last_tok_text_stack
 
     cdef unordered_set[int] CLOSING_TOKEN
     cdef unordered_set[int] HIDDEN_TOKEN
@@ -169,7 +175,7 @@ cdef class IndentProcessor:
 
     cdef inline void dec_level(self, int n=1)
 
-    cpdef process(self)
+    cpdef str process(self)
 
     cdef bool ws(self, int size)
 
@@ -177,7 +183,7 @@ cdef class IndentProcessor:
 
     cdef inline void save(self)
 
-    cdef void render(self, object token)
+    cdef void render(self, CCommonToken token)
 
     cdef inline bool success(self)
 
@@ -193,13 +199,13 @@ cdef class IndentProcessor:
 
     cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=?)
 
-    cdef bool next_in_rc_cont(self, unordered_set[int] types, hidden_right=?)
+    cdef bool next_in_rc_cont(self, unordered_set[int] types, bool hidden_right=?)
 
     cdef void strip_hidden(self)
 
     cdef int get_column_of_last(self)
 
-    cdef object get_previous_comment(self)
+    cdef CCommonToken* get_previous_comment(self)
 
     cdef str get_previous_comment_str(self)
 
