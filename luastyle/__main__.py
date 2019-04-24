@@ -213,7 +213,7 @@ def main():
     else:
         indent_options = IndentOptions()
         indent_options.indent_size = options.indent_size
-        indent_options.indent_char = options.indent_char
+        indent_options.indent_char = ord(options.indent_char)
         indent_options.indent_with_tabs = options.indent_with_tabs
         indent_options.initial_indent_level = options.initial_indent_level
 

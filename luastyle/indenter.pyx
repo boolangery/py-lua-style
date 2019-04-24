@@ -11,7 +11,7 @@ cdef class IndentOptions:
     def __init__(self):
         self.indent_size = 2
 
-        self.indent_char = ' '
+        self.indent_char = b' '
         self.indent_with_tabs = False
         self.initial_indent_level = 0
         self.close_on_lowest_level = False
@@ -105,21 +105,13 @@ cdef class IndentOptions:
         return options
 
 
+cdef inline void repeat_char(string* s, char c, int n):
+    s.resize(n)
+    for i in range(n):
+        deref(s)[i] = c
+
+
 cdef class IndentProcessor:
-    HIDDEN_TOKEN_WITHOUT_COMMENTS = [
-        CTokens.SHEBANG,
-        CTokens.NEWLINE,
-        CTokens.SPACE,
-        -2]
-
-    REL_OPERATORS = [
-        CTokens.LT,
-        CTokens.GT,
-        CTokens.LTEQ,
-        CTokens.GTEQ,
-        CTokens.NEQ,
-        CTokens.EQ]
-
     def __init__(self, options, stream):
         # constants init
         self.CLOSING_TOKEN.insert(CTokens.END)
@@ -132,6 +124,42 @@ cdef class IndentProcessor:
         self.HIDDEN_TOKEN.insert(CTokens.NEWLINE)
         self.HIDDEN_TOKEN.insert(CTokens.SPACE)
         self.HIDDEN_TOKEN.insert(-2)
+
+        self.HIDDEN_TOKEN_WITHOUT_COMMENTS.insert(CTokens.SHEBANG)
+        self.HIDDEN_TOKEN_WITHOUT_COMMENTS.insert(CTokens.NEWLINE)
+        self.HIDDEN_TOKEN_WITHOUT_COMMENTS.insert(CTokens.SPACE)
+        self.HIDDEN_TOKEN_WITHOUT_COMMENTS.insert(-2)
+
+        self.REL_OPERATORS.insert(CTokens.LT)
+        self.REL_OPERATORS.insert(CTokens.GT)
+        self.REL_OPERATORS.insert(CTokens.LTEQ)
+        self.REL_OPERATORS.insert(CTokens.GTEQ)
+        self.REL_OPERATORS.insert(CTokens.NEQ)
+        self.REL_OPERATORS.insert(CTokens.EQ)
+
+        self.ADD_MINUS_OP.insert(CTokens.ADD)
+        self.ADD_MINUS_OP.insert(CTokens.MINUS)
+
+        self.MULT_OP.insert(CTokens.MULT)
+        self.MULT_OP.insert(CTokens.DIV)
+        self.MULT_OP.insert(CTokens.MOD)
+        self.MULT_OP.insert(CTokens.FLOOR)
+
+        self.BITWISE_OP.insert(CTokens.BITAND)
+        self.BITWISE_OP.insert(CTokens.BITOR)
+        self.BITWISE_OP.insert(CTokens.BITNOT)
+        self.BITWISE_OP.insert(CTokens.BITRSHIFT)
+        self.BITWISE_OP.insert(CTokens.BITRLEFT)
+
+        self.ATOM_OP.insert(CTokens.VARARGS)
+        self.ATOM_OP.insert(CTokens.NUMBER)
+        self.ATOM_OP.insert(CTokens.STRING)
+        self.ATOM_OP.insert(CTokens.NIL)
+        self.ATOM_OP.insert(CTokens.TRUE)
+        self.ATOM_OP.insert(CTokens.FALSE)
+
+        self.COMMA_SEMCOL.insert(CTokens.COMMA)
+        self.COMMA_SEMCOL.insert(CTokens.SEMCOL)
 
         self._stream = stream
         # contains a list of CommonTokens
@@ -147,8 +175,7 @@ cdef class IndentProcessor:
         # append the first indentation token
         cdef CCommonToken t
         t.type = -2  # indentation type
-        text = self._opt.indent_char * self.get_current_indent()
-        t.text = text.encode('UTF-8')
+        repeat_char(&t.text, self._opt.indent_char, self.get_current_indent())
         self._src.push_back(t)
 
     cdef void inc_level(self, int n=1):
@@ -160,13 +187,16 @@ cdef class IndentProcessor:
 
     cpdef str process(self):
         if self._opt.indent_with_tabs:
-            self._opt.indent_char = '\t'
+            self._opt.indent_char = b'\t'
 
         if not self.parse_chunk():
             raise Exception("Expecting a chunk")
 
-        src = ''.join([t.text.decode('UTF-8') for t in self._src])
-        return src
+        cdef string src
+        for token in self._src:
+            src += token.text
+
+        return src.decode('UTF-8')
 
     cdef bool ws(self, int size):
         cdef bool new_line
@@ -178,12 +208,9 @@ cdef class IndentProcessor:
 
         if not new_line:
             if last.type == CTokens.SPACE:
-                text = text = ' ' * size
-                last.text = text.encode('UTF-8')
+                repeat_char(&last.text, b' ', size)
             else:
-                token.type = CTokens.SPACE  # indentation token
-                text = text = ' ' * size
-                token.text = text.encode('UTF-8')
+                repeat_char(&token.text, b' ', size)
                 self.render(token)
 
         return True
@@ -200,7 +227,7 @@ cdef class IndentProcessor:
         while it != self._src.rend():
             if deref(it).type == CTokens.NEWLINE:
                 return True
-            elif not deref(it).type in self.HIDDEN_TOKEN_WITHOUT_COMMENTS:
+            elif self.HIDDEN_TOKEN_WITHOUT_COMMENTS.find(deref(it).type) == self.HIDDEN_TOKEN_WITHOUT_COMMENTS.end():
                 break
             inc(it)
 
@@ -218,14 +245,13 @@ cdef class IndentProcessor:
         self._right_index_stack.push_back(self._right_index)
         self._last_tok_text_stack.push_back(self._src.back().text)
 
-    cdef void render(self, CCommonToken token):
+    cdef void render(self, CCommonToken& token):
         cdef CCommonToken t
         cdef vector[CCommonToken].reverse_iterator it
 
         if not self._src.empty() and self._src.back().type == CTokens.NEWLINE:
             t.type = -2  # indentation token
-            text = self._opt.indent_char * self.get_current_indent()
-            t.text = text.encode('UTF-8')
+            repeat_char(&t.text, self._opt.indent_char, self.get_current_indent())
             self._src.push_back(t)
             self._line_count += 1
 
@@ -237,8 +263,7 @@ cdef class IndentProcessor:
                         pass  # continue
                     elif deref(it).type == -2:
                         # set on current level
-                        text = self._opt.indent_char * self.get_current_indent()
-                        deref(it).text = text.encode('UTF-8')
+                        repeat_char(&deref(it).text, self._opt.indent_char, self.get_current_indent())
                     else:
                         break
                     inc(it)
@@ -325,7 +350,7 @@ cdef class IndentProcessor:
     cdef bool next_is(self, int type, int offset=0):
         return self._stream.LT(1 + offset).type == type
 
-    cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=True):
+    cdef bool next_in_rc(self, unordered_set[int]& types, bool hidden_right=True):
         cdef object py_tok
         cdef CCommonToken token
         cdef int tok_type
@@ -345,7 +370,7 @@ cdef class IndentProcessor:
 
         return False
 
-    cdef bool next_in_rc_cont(self, unordered_set[int] types, bool hidden_right=True):
+    cdef bool next_in_rc_cont(self, unordered_set[int]& types, bool hidden_right=True):
         cdef bool is_newline
         cdef int space_count
         cdef object token
@@ -396,8 +421,7 @@ cdef class IndentProcessor:
                 inc(it)
 
             if space_count > 0:
-                text = ' ' * space_count
-                tok.text = text.encode('UTF-8')
+                repeat_char(&tok.text, b' ', space_count)
                 self._src.push_back(tok)
 
             return True
@@ -448,8 +472,8 @@ cdef class IndentProcessor:
 
         return ""
 
-    cdef bool next_in(self, types):
-        return self._stream.LT(1).type in types
+    cdef bool next_in(self, unordered_set[int]& types):
+        return types.find(self._stream.LT(1).type) != types.end()
 
     cdef void handle_hidden_left(self):
         cdef CCommonToken token
@@ -1154,7 +1178,7 @@ cdef class IndentProcessor:
             while True:
                 self.save()
                 if (not self._opt.space_around_op or self.ws(1)) and \
-                        self.next_in_rc([CTokens.ADD, CTokens.MINUS]) and \
+                        self.next_in_rc(self.ADD_MINUS_OP) and \
                         (not self._opt.space_around_op or self.ws(1)) and \
                         self.parse_mult_expr():
                     self._last_expr_type = Expr.EXPR_ADD
@@ -1170,10 +1194,7 @@ cdef class IndentProcessor:
         if self.parse_bitwise_expr():
             while True:
                 self.save()
-                if (not self._opt.space_around_op or self.ws(1)) and self.next_in_rc([CTokens.MULT,
-                                   CTokens.DIV,
-                                   CTokens.MOD,
-                                   CTokens.FLOOR]) and (not self._opt.space_around_op or self.ws(1)) and self.parse_bitwise_expr():
+                if (not self._opt.space_around_op or self.ws(1)) and self.next_in_rc(self.MULT_OP) and (not self._opt.space_around_op or self.ws(1)) and self.parse_bitwise_expr():
                     self._last_expr_type = Expr.EXPR_MULT
                     self.success()
                 else:
@@ -1187,11 +1208,7 @@ cdef class IndentProcessor:
         if self.parse_unary_expr():
             while True:
                 self.save()
-                if self.next_in_rc([CTokens.BITAND,
-                                 CTokens.BITOR,
-                                 CTokens.BITNOT,
-                                 CTokens.BITRSHIFT,
-                                 CTokens.BITRLEFT]) and self.parse_unary_expr():
+                if self.next_in_rc(self.BITWISE_OP) and self.parse_unary_expr():
                     self._last_expr_type = Expr.EXPR_BITWISE
                     self.success()
                 else:
@@ -1246,12 +1263,7 @@ cdef class IndentProcessor:
         if self.parse_var() or \
                 self.parse_function_literal() or \
                 self.parse_table_constructor() or \
-                self.next_in_rc([CTokens.VARARGS,
-                                 CTokens.NUMBER,
-                                 CTokens.STRING,
-                                 CTokens.NIL,
-                                 CTokens.TRUE,
-                                 CTokens.FALSE]):
+                self.next_in_rc(self.ATOM_OP):
             self._last_expr_type = Expr.EXPR_ATOM
             return self.success()
         return self.failure()
@@ -1294,9 +1306,9 @@ cdef class IndentProcessor:
                 while True:
                     self.save()
                     # if check_field_list, no space is allowed between COMMA and key
-                    if self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and \
-                            ((check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
-                            (not check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
+                    if self.next_in(self.COMMA_SEMCOL) and \
+                            ((check_field_list and self.next_in_rc_cont(self.COMMA_SEMCOL)) or \
+                            (not check_field_list and self.next_in_rc(self.COMMA_SEMCOL))) and \
                             (not check_field_list or self.ws(1)) and \
                             self.parse_field().success:
                         self.success()
@@ -1321,7 +1333,7 @@ cdef class IndentProcessor:
                         if field_result.assign_position > max_position:
                             max_position = field_result.assign_position
 
-                    if not (self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL])):
+                    if not (self.next_in(self.COMMA_SEMCOL) and self.next_in_rc(self.COMMA_SEMCOL)):
                         break
                 else:
                     break
@@ -1342,9 +1354,9 @@ cdef class IndentProcessor:
                     self.parse_field()
 
                 if k < <int>field_results.size():
-                    if self.next_in([CTokens.COMMA, CTokens.SEMCOL]) and \
-                            ((check_field_list and self.next_in_rc_cont([CTokens.COMMA, CTokens.SEMCOL])) or \
-                            (not check_field_list and self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]))) and \
+                    if self.next_in(self.COMMA_SEMCOL) and \
+                            ((check_field_list and self.next_in_rc_cont(self.COMMA_SEMCOL)) or \
+                            (not check_field_list and self.next_in_rc(self.COMMA_SEMCOL))) and \
                             (not check_field_list or self.ws(1)):
                         pass
 
@@ -1398,7 +1410,7 @@ cdef class IndentProcessor:
 
     cdef bool parse_field_sep(self):
         self.save()
-        if self.next_in_rc([CTokens.COMMA, CTokens.SEMCOL]):
+        if self.next_in_rc(self.COMMA_SEMCOL):
             return self.success()
         return self.failure()
 

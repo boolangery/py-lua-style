@@ -11,7 +11,7 @@ import json
 cdef class IndentOptions:
     """Define indentation options"""
     cdef public int indent_size
-    cdef public str indent_char
+    cdef public char indent_char
     cdef public bool indent_with_tabs
     cdef public int initial_indent_level
     # in case of several closing token on the same line ('}', ')', 'end')
@@ -168,8 +168,13 @@ cdef class IndentProcessor:
 
     cdef unordered_set[int] CLOSING_TOKEN
     cdef unordered_set[int] HIDDEN_TOKEN
-    #cdef unordered_set[int] REL_OPERATORS
-
+    cdef unordered_set[int] HIDDEN_TOKEN_WITHOUT_COMMENTS
+    cdef unordered_set[int] REL_OPERATORS
+    cdef unordered_set[int] ADD_MINUS_OP
+    cdef unordered_set[int] MULT_OP
+    cdef unordered_set[int] BITWISE_OP
+    cdef unordered_set[int] ATOM_OP
+    cdef unordered_set[int] COMMA_SEMCOL
 
     cdef inline void inc_level(self, int n=1)
 
@@ -183,7 +188,7 @@ cdef class IndentProcessor:
 
     cdef inline void save(self)
 
-    cdef void render(self, CCommonToken token)
+    cdef void render(self, CCommonToken& token)
 
     cdef inline bool success(self)
 
@@ -197,9 +202,9 @@ cdef class IndentProcessor:
 
     cdef bool next_is(self, int type, int offset=?)
 
-    cdef bool next_in_rc(self, unordered_set[int] types, bool hidden_right=?)
+    cdef bool next_in_rc(self, unordered_set[int]& types, bool hidden_right=?)
 
-    cdef bool next_in_rc_cont(self, unordered_set[int] types, bool hidden_right=?)
+    cdef bool next_in_rc_cont(self, unordered_set[int]& types, bool hidden_right=?)
 
     cdef void strip_hidden(self)
 
@@ -209,7 +214,7 @@ cdef class IndentProcessor:
 
     cdef str get_previous_comment_str(self)
 
-    cdef inline bool next_in(self, types)
+    cdef inline bool next_in(self, unordered_set[int]& types)
 
     cdef void handle_hidden_left(self)
 
