@@ -105,10 +105,9 @@ cdef class IndentOptions:
         return options
 
 
-cdef inline void repeat_char(string* s, char c, int n):
-    s.resize(n)
-    for i in range(n):
-        deref(s)[i] = c
+cdef inline void repeat_char(string& s, char c, int n):
+    s.resize(0)
+    s.resize(n, c)
 
 
 cdef class IndentProcessor:
@@ -175,7 +174,7 @@ cdef class IndentProcessor:
         # append the first indentation token
         cdef CCommonToken t
         t.type = -2  # indentation type
-        repeat_char(&t.text, self._opt.indent_char, self.get_current_indent())
+        repeat_char(t.text, self._opt.indent_char, self.get_current_indent())
         self._src.push_back(t)
 
     cdef void inc_level(self, int n=1):
@@ -208,9 +207,10 @@ cdef class IndentProcessor:
 
         if not new_line:
             if last.type == CTokens.SPACE:
-                repeat_char(&last.text, b' ', size)
+                repeat_char(last.text, b' ', size)
             else:
-                repeat_char(&token.text, b' ', size)
+                repeat_char(token.text, b' ', size)
+                token.type = CTokens.SPACE
                 self.render(token)
 
         return True
@@ -251,7 +251,7 @@ cdef class IndentProcessor:
 
         if not self._src.empty() and self._src.back().type == CTokens.NEWLINE:
             t.type = -2  # indentation token
-            repeat_char(&t.text, self._opt.indent_char, self.get_current_indent())
+            repeat_char(t.text, b' ', self.get_current_indent())
             self._src.push_back(t)
             self._line_count += 1
 
@@ -263,7 +263,7 @@ cdef class IndentProcessor:
                         pass  # continue
                     elif deref(it).type == -2:
                         # set on current level
-                        repeat_char(&deref(it).text, self._opt.indent_char, self.get_current_indent())
+                        repeat_char(deref(it).text, self._opt.indent_char, self.get_current_indent())
                     else:
                         break
                     inc(it)
@@ -421,7 +421,7 @@ cdef class IndentProcessor:
                 inc(it)
 
             if space_count > 0:
-                repeat_char(&tok.text, b' ', space_count)
+                repeat_char(tok.text, b' ', space_count)
                 self._src.push_back(tok)
 
             return True
@@ -1260,7 +1260,7 @@ cdef class IndentProcessor:
 
     cdef bool parse_atom(self):
         self.save()
-        if self.parse_var() or \
+        if self.parse_var(True) or \
                 self.parse_function_literal() or \
                 self.parse_table_constructor() or \
                 self.next_in_rc(self.ATOM_OP):

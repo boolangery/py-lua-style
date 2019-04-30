@@ -47,3 +47,6 @@ local player_shape = types.shape{
 
   assert.is_true(process:worker('foo').emulate())
     assert.is_true(42, process:worker('foo'):emulate())
+
+local a = get('/foo/:bar')
+  .put('/foo/:id')
