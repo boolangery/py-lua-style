@@ -157,6 +157,7 @@ cdef class IndentProcessor:
     cdef object _last_expr_type
     cdef bool _is_tail_chainable
     cdef int _tail_last_line
+    cdef CCommonToken _indentation_token
 
     cdef vector[int] _index_stack
     cdef vector[int] _src_index_stack
@@ -197,6 +198,8 @@ cdef class IndentProcessor:
     cdef inline void failure_save(self)
 
     cdef bool next_is_rc(self, int type, hidden_right=?)
+
+    cdef bool next_rc(self, hidden_right=?)
 
     cdef bool next_is_c(self, int type, hidden_right=?)
 
@@ -302,4 +305,4 @@ cdef class IndentProcessor:
 
     cdef bool parse_field_sep(self)
 
-    cdef int get_current_indent(self, int offset=?)
+    cdef inline int get_current_indent(self)

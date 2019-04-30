@@ -160,6 +160,9 @@ cdef class IndentProcessor:
         self.COMMA_SEMCOL.insert(CTokens.COMMA)
         self.COMMA_SEMCOL.insert(CTokens.SEMCOL)
 
+        # init indentation token
+        self._indentation_token.type = -2  # indentation token
+
         self._stream = stream
         # contains a list of CommonTokens
         self._opt = options
@@ -179,10 +182,11 @@ cdef class IndentProcessor:
 
     cdef void inc_level(self, int n=1):
         self._level += n
+        repeat_char(self._indentation_token.text, self._opt.indent_char, self.get_current_indent())
 
     cdef void dec_level(self, int n=1):
         self._level -= n
-        #logging.debug('<%s dec level, level=%d', self._debug_level * 2 * '*', self._level)
+        repeat_char(self._indentation_token.text, self._opt.indent_char, self.get_current_indent())
 
     cpdef str process(self):
         if self._opt.indent_with_tabs:
@@ -246,13 +250,10 @@ cdef class IndentProcessor:
         self._last_tok_text_stack.push_back(self._src.back().text)
 
     cdef void render(self, CCommonToken& token):
-        cdef CCommonToken t
         cdef vector[CCommonToken].reverse_iterator it
 
-        if not self._src.empty() and self._src.back().type == CTokens.NEWLINE:
-            t.type = -2  # indentation token
-            repeat_char(t.text, b' ', self.get_current_indent())
-            self._src.push_back(t)
+        if self._src.back().type == CTokens.NEWLINE:
+            self._src.push_back(self._indentation_token)
             self._line_count += 1
 
         elif not self._opt.close_on_lowest_level:
@@ -263,7 +264,8 @@ cdef class IndentProcessor:
                         pass  # continue
                     elif deref(it).type == -2:
                         # set on current level
-                        repeat_char(deref(it).text, self._opt.indent_char, self.get_current_indent())
+                        deref(it).text = self._indentation_token.text
+                        break
                     else:
                         break
                     inc(it)
@@ -326,6 +328,22 @@ cdef class IndentProcessor:
             return True
 
         return False
+
+    cdef bool next_rc(self, hidden_right=True):
+        """rc is for render and consume token."""
+        cdef object py_tok
+        cdef CCommonToken token
+        cdef int toktype
+
+        py_tok = self._stream.LT(1)
+        token.type = py_tok.type
+        token.text = py_tok.text.encode('UTF-8')
+        self._right_index = self._stream.index
+        self._stream.consume()
+        self.render(token)
+        if hidden_right:
+            self.handle_hidden_right()
+        return True
 
     cdef bool next_is_c(self, int type, hidden_right=True):
         """c is for consume token."""
@@ -557,18 +575,18 @@ cdef class IndentProcessor:
 
         # check first most common statements
         if self.parse_assignment() \
-                or self.parse_var(True) \
-                or self.parse_do_block() \
-                or self.parse_while_stat() \
                 or self.parse_local() \
+                or self.parse_var(True) \
                 or self.parse_if_stat() \
+                or self.parse_function() \
                 or self.parse_for_stat() \
-                or self.parse_function():
+                or self.parse_do_block() \
+                or self.parse_while_stat():
+
             # re-indent right hidden token after leaving the statement
             self.strip_hidden()
             self.handle_hidden_right()
             return True
-
         # handle the ambiguous syntax
         # http://lua-users.org/lists/lua-l/2009-08/msg00543.html
         # example:
@@ -616,8 +634,7 @@ cdef class IndentProcessor:
         return False
 
     cdef bool parse_ret_stat(self):
-        self.save()
-        if self.next_is_rc(CTokens.RETURN):
+        if self.next_is(CTokens.RETURN) and self.next_rc():
             self.parse_expr_list()  # optional
 
             self.save()
@@ -627,8 +644,8 @@ cdef class IndentProcessor:
             else:
                 self.failure()
 
-            return self.success()
-        return self.failure()
+            return True
+        return False
 
     cdef bool parse_assignment(self):
         self.save()
@@ -727,13 +744,13 @@ cdef class IndentProcessor:
         result.success = True
 
         # do not render last hidden
-        self.save()
-        if self.next_is_rc(CTokens.DOT) and self.next_is_rc(CTokens.NAME, False):
+        if self.next_is(CTokens.DOT) and self.next_is(CTokens.NAME, 1):
+            self.next_rc()
+            self.next_rc(False)
             result.last_line = self._line_count
-            self.success()
             return result
 
-        self.failure_save()
+        self.save()
         if self.next_is_rc(CTokens.OBRACK) and self.parse_expr() and self.next_is_rc(CTokens.CBRACK, False):
             result.last_line = self._line_count
             self.success()
@@ -1414,11 +1431,11 @@ cdef class IndentProcessor:
             return self.success()
         return self.failure()
 
-    cdef int get_current_indent(self, int offset=0):
+    cdef int get_current_indent(self):
         if not self._opt.indent_with_tabs:
-            return (self._level + offset + self._opt.initial_indent_level) * self._opt.indent_size
+            return (self._level + self._opt.initial_indent_level) * self._opt.indent_size
         else:
-            return self._level + offset + self._opt.initial_indent_level
+            return self._level + self._opt.initial_indent_level
 
 
 class IndentRule:
