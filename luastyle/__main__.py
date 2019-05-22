@@ -44,6 +44,11 @@ def main():
                          dest='debug',
                          help='enable debugging messages',
                          default=False)
+    cli_group.add_option('-v', '--verbose',
+                         action='store_true',
+                         dest='verbose',
+                         help='enable statistic messages',
+                         default=False)
     cli_group.add_option('-j', '--jobs',
                          metavar='N', type="int",
                          dest='jobs',
@@ -213,7 +218,7 @@ def main():
     else:
         indent_options = IndentOptions()
         indent_options.indent_size = options.indent_size
-        indent_options.indent_char = ord(options.indent_char)
+        indent_options.indent_char = options.indent_char
         indent_options.indent_with_tabs = options.indent_with_tabs
         indent_options.initial_indent_level = options.initial_indent_level
 
@@ -252,7 +257,8 @@ def main():
     FilesProcessor(options.replace,
                    options.jobs,
                    options.check_bytecode,
-                   indent_options).run(filenames)
+                   indent_options,
+                   options.verbose).run(filenames)
 
 
 if __name__ == '__main__':
