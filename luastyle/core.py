@@ -28,11 +28,12 @@ class Configuration:
 
 
 class FilesProcessor:
-    def __init__(self, rewrite, jobs, check_bytecode, indent_options):
+    def __init__(self, rewrite, jobs, check_bytecode, indent_options, verbose):
         self._rewrite = rewrite
         self._jobs = jobs
         self._check_bytecode = check_bytecode
         self._indent_options = indent_options
+        self.verbose = verbose
 
     def _process_one(self, filepath):
         """Process one file.
@@ -60,10 +61,12 @@ class FilesProcessor:
         return bytecode_equal, len(rule_output.split('\n'))
 
     def run(self, files):
-        print(str(len(files)) + ' file(s) to process')
+        if self.verbose:
+            print(str(len(files)) + ' file(s) to process')
 
         processed = 0
-        print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed')
+        if self.verbose:
+            print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed')
 
         # some stats
         start = time.time()
@@ -84,11 +87,13 @@ class FilesProcessor:
                     print('%r generated an exception: %s' % (file, exc))
                 else:
                     processed += 1
-                    print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed, last is ' + file)
+                    if self.verbose:
+                        print('[' + str(processed) + '/' + str(len(files)) + '] file(s) processed, last is ' + file)
                     sys.stdout.flush()
 
         end = time.time()
-        print(str(total_lines) + ' source lines processed in ' + str(round(end - start, 2)) + ' s')
+        if self.verbose:
+            print(str(total_lines) + ' source lines processed in ' + str(round(end - start, 2)) + ' s')
 
 
 def check_lua_bytecode(raw, formatted):
