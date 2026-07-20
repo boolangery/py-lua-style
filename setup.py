@@ -1,8 +1,16 @@
 import sys
+import re
 from setuptools import setup, Extension, Command
 from setuptools.command.sdist import sdist
 from setuptools.command.build_ext import build_ext
-import luastyle
+
+def _get_version():
+    with open("luastyle/__init__.py", "r") as f:
+        for line in f:
+            m = re.match(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", line)
+            if m:
+                return m.group(1)
+    raise RuntimeError("Unable to find version string")
 
 
 with open('README.rst') as file:
@@ -53,11 +61,11 @@ class Sdist(sdist):
 
 setup(
     name='luastyle',
-    version=luastyle.__version__,
+    version=_get_version(),
     description='A lua code formatter in Python !',
     long_description=long_description,
     url='https://github.com/boolangery/py-lua-style',
-    download_url='https://github.com/boolangery/py-lua-style/archive/' + luastyle.__version__ + '.tar.gz',
+    download_url='https://github.com/boolangery/py-lua-style/archive/' + _get_version() + '.tar.gz',
     author='Eliott Dumeix',
     author_email='eliott.dumeix@gmail.com',
     license='MIT',
