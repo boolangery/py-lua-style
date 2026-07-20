@@ -23,7 +23,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install cython build
+        python -m pip install setuptools cython build
     - name: Cythonize
       run: |
         python setup.py cythonize
