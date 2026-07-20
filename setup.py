@@ -65,9 +65,12 @@ setup(
     packages=['luastyle', 'luastyle.tests'],
     zip_safe=False,
     classifiers=[
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12'
     ],
+    python_requires='>=3.9',
     install_requires=['luaparser>=2.0'],
     entry_points={
         'console_scripts': [
