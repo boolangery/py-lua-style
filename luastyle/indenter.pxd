@@ -63,8 +63,10 @@ cdef enum Expr:
 cdef enum CTokens:
     # Updated for luaparser >=4.0 / antlr4 LuaLexer token types
     # See: luaparser.parser.LuaLexer
-    SEMCOL = 1        # was 55 (SEMI)
-    EQ = 2            # was 31; also ASSIGN (antlr4: single = token)
+    # Updated for luaparser >=4.0 — actual antlr4 token type values
+    # (NOT the LuaLexer constant names, which differ from runtime types)
+    SEMCOL = 1        # was 55; actual: SEMI
+    ASSIGN = 2        # was 37; actual: = (EQ constant)
     BREAK = 3         # was 2
     GOTO = 4          # was 10
     DO = 5            # was 3
@@ -72,10 +74,10 @@ cdef enum CTokens:
     WHILE = 7         # was 22
     REPEAT = 8        # was 17
     UNTIL = 9         # was 21
-    IFTOK = 10        # was 11 (IF)
+    IFTOK = 10        # was 11; actual: IF
     THEN = 11         # was 19
     ELSEIF = 12       # was 5
-    ELSETOK = 13      # was 4 (ELSE)
+    ELSETOK = 13      # was 4; actual: ELSE
     FOR = 14          # was 8
     COMMA = 15        # was 51
     IN = 16           # was 12
@@ -84,55 +86,55 @@ cdef enum CTokens:
     LT = 19           # was 35
     GT = 20           # was 36
     RETURN = 21       # was 18
-    COLCOL = 22       # was 49 (CC = ::)
+    COLCOL = 22       # was 49; actual: :: (CC constant)
     NIL = 23          # was 14
     FALSE = 24        # was 7
     TRUE = 25         # was 20
     DOT = 26          # was 54
-    BITNOT = 27       # was 40 (SQUIG = ~)
+    BITNOT = 27       # was 40; actual: ~ (SQUIG constant)
     MINUS = 28        # was 24
-    LENGTH = 29       # was 30 (POUND = #)
-    OPAR = 30         # was 43 (OP = ()
-    CPAR = 31         # was 44 (CP = ))
+    LENGTH = 29       # was 30; actual: # (POUND constant)
+    OPAR = 30         # was 43; actual: ( (OP constant)
+    CPAR = 31         # was 44; actual: ) (CP constant)
     NOT = 32          # was 15
-    BITRLEFT = 33     # was 42 (LL = <<)
-    BITRSHIFT = 34    # was 41 (GG = >>)
-    BITAND = 35       # was 38 (AMP = &)
-    FLOOR = 36        # was 27 (SS = //)
-    MOD = 37          # was 28 (PER = %)
+    BITRLEFT = 33     # was 42; actual: << (LL constant)
+    BITRSHIFT = 34    # was 41; actual: >> (GG constant)
+    BITAND = 35       # was 38; actual: & (AMP constant)
+    FLOOR = 36        # was 27; actual: // (SS constant)
+    MOD = 37          # was 28; actual: % (PER constant)
     COL = 38          # was 50
-    LTEQ = 39         # was 33 (LE = <=)
-    GTEQ = 40         # was 34 (GE = >=)
+    LTEQ = 39         # was 33; actual: <= (LE constant)
+    GTEQ = 40         # was 34; actual: >= (GE constant)
     AND = 41          # was 1
     OR = 42           # was 16
-    ADD = 43          # was 23 (PLUS = +)
-    MULT = 44         # was 25 (STAR = *)
-    OBRACK = 45       # was 47 (OCU = [)
-    CBRACK = 46       # was 48 (CCU = ])
-    OBRACE = 47       # was 45 (OB = {)
-    CBRACE = 48       # was 46 (CB = })
-    NEQ = 49          # was 32 (EE = ~=)
-    CONCAT = 50       # was 53 (DD = ..)
-    BITOR = 51        # was 39 (PIPE = |)
-    POW = 52          # was 29 (CARET = ^)
-    DIV = 53          # was 26 (SLASH = /)
-    VARARGS = 54      # was 52 (DDD = ...)
+    ADD = 43          # was 23; actual: + (PLUS constant)
+    MULT = 44         # was 25; actual: * (STAR constant)
+    OBRACE = 45       # was 45; actual: { (runtime type, NOT OB constant=47)
+    CBRACE = 46       # was 46; actual: } (runtime type, NOT CB constant=48)
+    OBRACK = 47       # was 47; actual: [ (runtime type, NOT OCU constant=45)
+    CBRACK = 48       # was 48; actual: ] (runtime type, NOT CCU constant=46)
+    EQ = 49           # was 31; actual: == (EE constant, single token in antlr4)
+    CONCAT = 50       # was 53; actual: .. (DD constant)
+    BITOR = 51        # was 39; actual: | (PIPE constant)
+    POW = 52          # was 29; actual: ^ (CARET constant)
+    DIV = 53          # was 26; actual: / (SLASH constant)
+    VARARGS = 54      # was 52; actual: ... (DDD constant)
+    NEQ = 55          # was 32; actual: ~= (SQEQ constant, runtime type)
     NAME = 56         # was 56
-    STRING = 57       # was 58 (NORMALSTRING)
+    STRING = 57       # was 58; actual: NORMALSTRING
     NORMALSTRING = 57
     CHARSTRING = 58
     LONGSTRING = 59
-    NUMBER = 60       # was 57 (INT, most common)
+    NUMBER = 60       # was 57; actual: INT
     INT = 60
     HEX = 61
     FLOAT = 62
     HEX_FLOAT = 63
     COMMENT = 64      # was 59
     LINE_COMMENT = 65 # was 60
-    SPACE = 66        # was 61 (WS)
-    NEWLINE = 67      # was 62 (NL)
+    SPACE = 66        # was 61; actual: WS
+    NEWLINE = 67      # was 62; actual: NL
     SHEBANG = 68      # was 63
-    ASSIGN = 2        # was 37, same as EQ (antlr4 single =)
 
 
 cdef struct ParseFieldResult:
