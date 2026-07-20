@@ -1,6 +1,5 @@
 import logging
 from luaparser import ast, astnodes
-from luaparser.builder import Tokens
 from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
@@ -62,70 +61,78 @@ cdef enum Expr:
 
 
 cdef enum CTokens:
-    AND = 1
-    BREAK = 2
-    DO = 3
-    ELSETOK = 4
-    ELSEIF = 5
-    END = 6
-    FALSE = 7
-    FOR = 8
-    FUNCTION = 9
-    GOTO = 10
-    IFTOK = 11
-    IN = 12
-    LOCAL = 13
-    NIL = 14
-    NOT = 15
-    OR = 16
-    REPEAT = 17
-    RETURN = 18
-    THEN = 19
-    TRUE = 20
-    UNTIL = 21
-    WHILE = 22
-    ADD = 23
-    MINUS = 24
-    MULT = 25
-    DIV = 26
-    FLOOR = 27
-    MOD = 28
-    POW = 29
-    LENGTH = 30
-    EQ = 31
-    NEQ = 32
-    LTEQ = 33
-    GTEQ = 34
-    LT = 35
-    GT = 36
-    ASSIGN = 37
-    BITAND = 38
-    BITOR = 39
-    BITNOT = 40
-    BITRSHIFT = 41
-    BITRLEFT = 42
-    OPAR = 43
-    CPAR = 44
-    OBRACE = 45
-    CBRACE = 46
-    OBRACK = 47
-    CBRACK = 48
-    COLCOL = 49
-    COL = 50
-    COMMA = 51
-    VARARGS = 52
-    CONCAT = 53
-    DOT = 54
-    SEMCOL = 55
-    NAME = 56
-    NUMBER = 57
-    STRING = 58
-    COMMENT = 59
-    LINE_COMMENT = 60
-    SPACE = 61
-    NEWLINE = 62
-    SHEBANG = 63
-    LongBracket = 64
+    # Updated for luaparser >=4.0 / antlr4 LuaLexer token types
+    # See: luaparser.parser.LuaLexer
+    SEMCOL = 1        # was 55 (SEMI)
+    EQ = 2            # was 31; also ASSIGN (antlr4: single = token)
+    BREAK = 3         # was 2
+    GOTO = 4          # was 10
+    DO = 5            # was 3
+    END = 6           # was 6
+    WHILE = 7         # was 22
+    REPEAT = 8        # was 17
+    UNTIL = 9         # was 21
+    IFTOK = 10        # was 11 (IF)
+    THEN = 11         # was 19
+    ELSEIF = 12       # was 5
+    ELSETOK = 13      # was 4 (ELSE)
+    FOR = 14          # was 8
+    COMMA = 15        # was 51
+    IN = 16           # was 12
+    FUNCTION = 17     # was 9
+    LOCAL = 18        # was 13
+    LT = 19           # was 35
+    GT = 20           # was 36
+    RETURN = 21       # was 18
+    COLCOL = 22       # was 49 (CC = ::)
+    NIL = 23          # was 14
+    FALSE = 24        # was 7
+    TRUE = 25         # was 20
+    DOT = 26          # was 54
+    BITNOT = 27       # was 40 (SQUIG = ~)
+    MINUS = 28        # was 24
+    LENGTH = 29       # was 30 (POUND = #)
+    OPAR = 30         # was 43 (OP = ()
+    CPAR = 31         # was 44 (CP = ))
+    NOT = 32          # was 15
+    BITRLEFT = 33     # was 42 (LL = <<)
+    BITRSHIFT = 34    # was 41 (GG = >>)
+    BITAND = 35       # was 38 (AMP = &)
+    FLOOR = 36        # was 27 (SS = //)
+    MOD = 37          # was 28 (PER = %)
+    COL = 38          # was 50
+    LTEQ = 39         # was 33 (LE = <=)
+    GTEQ = 40         # was 34 (GE = >=)
+    AND = 41          # was 1
+    OR = 42           # was 16
+    ADD = 43          # was 23 (PLUS = +)
+    MULT = 44         # was 25 (STAR = *)
+    OBRACK = 45       # was 47 (OCU = [)
+    CBRACK = 46       # was 48 (CCU = ])
+    OBRACE = 47       # was 45 (OB = {)
+    CBRACE = 48       # was 46 (CB = })
+    NEQ = 49          # was 32 (EE = ~=)
+    CONCAT = 50       # was 53 (DD = ..)
+    BITOR = 51        # was 39 (PIPE = |)
+    POW = 52          # was 29 (CARET = ^)
+    DIV = 53          # was 26 (SLASH = /)
+    VARARGS = 54      # was 52 (DDD = ...)
+    NAME = 56         # was 56
+    STRING = 57       # was 58 (NORMALSTRING)
+    NORMALSTRING = 57
+    CHARSTRING = 58
+    LONGSTRING = 59
+    NUMBER = 60       # was 57 (INT, most common)
+    INT = 60
+    HEX = 61
+    FLOAT = 62
+    HEX_FLOAT = 63
+    COMMENT = 64      # was 59
+    LINE_COMMENT = 65 # was 60
+    SPACE = 66        # was 61 (WS)
+    NEWLINE = 67      # was 62 (NL)
+    SHEBANG = 68      # was 63
+    ASSIGN = 2        # was 37, same as EQ (antlr4 single =)
 
 
 cdef struct ParseFieldResult:
@@ -175,6 +182,7 @@ cdef class IndentProcessor:
     cdef unordered_set[int] MULT_OP
     cdef unordered_set[int] BITWISE_OP
     cdef unordered_set[int] ATOM_OP
+    cdef unordered_set[int] STRING_TYPES
     cdef unordered_set[int] COMMA_SEMCOL
 
     cdef inline void inc_level(self, int n=1)

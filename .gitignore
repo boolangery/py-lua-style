@@ -9,3 +9,4 @@ luastyle/tests/__pycache__/
 MANIFEST
 dist/
 luastyle/__init__.pyc
+indenter.html

@@ -152,13 +152,24 @@ cdef class IndentProcessor:
 
         self.ATOM_OP.insert(CTokens.VARARGS)
         self.ATOM_OP.insert(CTokens.NUMBER)
+        self.ATOM_OP.insert(CTokens.INT)
+        self.ATOM_OP.insert(CTokens.HEX)
+        self.ATOM_OP.insert(CTokens.FLOAT)
+        self.ATOM_OP.insert(CTokens.HEX_FLOAT)
         self.ATOM_OP.insert(CTokens.STRING)
+        self.ATOM_OP.insert(CTokens.NORMALSTRING)
+        self.ATOM_OP.insert(CTokens.CHARSTRING)
+        self.ATOM_OP.insert(CTokens.LONGSTRING)
         self.ATOM_OP.insert(CTokens.NIL)
         self.ATOM_OP.insert(CTokens.TRUE)
         self.ATOM_OP.insert(CTokens.FALSE)
 
         self.COMMA_SEMCOL.insert(CTokens.COMMA)
         self.COMMA_SEMCOL.insert(CTokens.SEMCOL)
+
+        self.STRING_TYPES.insert(CTokens.NORMALSTRING)
+        self.STRING_TYPES.insert(CTokens.CHARSTRING)
+        self.STRING_TYPES.insert(CTokens.LONGSTRING)
 
         # init indentation token
         self._indentation_token.type = -2  # indentation token
@@ -782,7 +793,7 @@ cdef class IndentProcessor:
         self.failure_save()
         if self.next_is_rc(CTokens.COL) and self.next_is_rc(CTokens.NAME):
             result.last_line = self._line_count
-            if self.next_is_rc(CTokens.STRING, False):
+            if self.next_is_rc(CTokens.STRING, False) or self.next_is_rc(CTokens.CHARSTRING, False) or self.next_is_rc(CTokens.LONGSTRING, False):
                 self.success()
                 return result
 
@@ -808,7 +819,7 @@ cdef class IndentProcessor:
             return result
 
         self.failure_save()
-        if self.next_is_rc(CTokens.STRING, False):
+        if self.next_is_rc(CTokens.STRING, False) or self.next_is_rc(CTokens.CHARSTRING, False) or self.next_is_rc(CTokens.LONGSTRING, False):
             result.is_chainable = False
             self.success()
             return result
