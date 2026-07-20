@@ -536,17 +536,19 @@ cdef class IndentProcessor:
             for t in tokens:
                 # TODO: replace with a map
                 if t.type == CTokens.NEWLINE:
-                    # Strip indentation from previous empty line
-                    # (antlr4 produces separate SPACE tokens before NL,
-                    #  but the render function pushes indent after each NL.
-                    #  For consecutive newlines, remove the intermediate indent.)
-                    if self._src.size() >= 2 and self._src.back().type == -2:
-                        prev = self._src[self._src.size() - 2]
-                        if prev.type == CTokens.NEWLINE:
-                            self._src.pop_back()  # remove indent on empty line
                     token.type = t.type
                     token.text = t.text.encode('UTF-8')
                     self.render(token)
+                    # render() pushes indentation after each newline.
+                    # For consecutive newlines, remove the intermediate indent
+                    # so empty lines don't carry over indentation.
+                    if self._src.size() >= 3:
+                        if (self._src.back().type == CTokens.NEWLINE and
+                            self._src[self._src.size() - 2].type == -2 and
+                            self._src[self._src.size() - 3].type == CTokens.NEWLINE):
+                            self._src.pop_back()  # remove NL
+                            self._src.pop_back()  # remove INDENT
+                            self._src.push_back(token)  # re-push NL
                     is_newline = True
                 elif t.type == CTokens.SPACE:
                     if not is_newline:
