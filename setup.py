@@ -1,8 +1,7 @@
 import sys
-from setuptools import setup, Extension
-from distutils.command.sdist import sdist
-from distutils.command.build_ext import build_ext
-import distutils.cmd
+from setuptools import setup, Extension, Command
+from setuptools.command.sdist import sdist
+from setuptools.command.build_ext import build_ext
 import luastyle
 
 
@@ -30,7 +29,7 @@ class BuildExt(build_ext):
         build_ext.run(self)
 
 
-class CythonizeCommand(distutils.cmd.Command):
+class CythonizeCommand(Command):
   description = 'Cythonize cython files'
   user_options = []
 
